@@ -64,6 +64,13 @@ export async function PATCH(
   const body = await req.json();
   const { status } = body;
 
+  if (typeof status !== 'boolean') {
+    return NextResponse.json(
+      { error: "Status must be a boolean value" },
+      { status: 400 }
+    );
+  }
+
   const { data, error } = await supabase
     .from("habit_records")
     .update({
