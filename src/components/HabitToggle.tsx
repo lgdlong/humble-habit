@@ -45,8 +45,13 @@ export function HabitToggle({ date, onSave }: HabitToggleProps) {
 
   const handleHabitToggle = async (habitId: string, currentStatus: boolean) => {
     if (!user) return;
-    await updateHabitRecord(user.id, habitId, date, !currentStatus);
-    onSave?.();
+    try {
+      await updateHabitRecord(user.id, habitId, date, !currentStatus);
+      onSave?.();
+    } catch (error) {
+      console.error("Failed to update habit record:", error);
+      // Optionally show user notification
+    }
   };
 
   const getHabitStatus = (habitId: string) => {
@@ -139,7 +144,7 @@ export function HabitToggle({ date, onSave }: HabitToggleProps) {
               );
             })
           )}
-          
+
           {/* Chỉ hiển thị dialog tạo thói quen mới khi user chưa đủ 2 thói quen. */}
           {/* Nếu đã có 2 thói quen, không cho phép tạo thêm (theo giới hạn app Humble Habbit). */}
           {habits.length < 2 && (

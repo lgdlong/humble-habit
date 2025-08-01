@@ -24,9 +24,14 @@ export function CreateHabitDialog() {
     e.preventDefault();
     if (!user || !name.trim()) return;
 
-    await createHabit(user.id, name.trim());
-    setName("");
-    setOpen(false);
+    try {
+      await createHabit(user.id, name.trim());
+      setName("");
+      setOpen(false);
+    } catch (error) {
+      console.error("Failed to create habit:", error);
+      // Consider showing an error message to the user
+    }
   };
 
   return (

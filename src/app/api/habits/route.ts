@@ -84,6 +84,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Use a transaction to prevent race conditions
+  // const { data, error } = await supabase.rpc("create_habit_with_limit", {
+  //   p_user_id: user.id,
+  //   p_name: name,
+  //   p_max_habits: 2,
+  // });
+
   const { data, error } = await supabase
     .from("habits")
     .insert({ user_id: user.id, name })

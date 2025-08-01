@@ -74,11 +74,25 @@ export async function PATCH(
   const { id } = await params;
   const body = await req.json();
   const { name } = body;
+
+  // Validate name
+  if (!name || typeof name !== "string" || name.trim().length === 0) {
+    return NextResponse.json({ error: "Invalid habit name" }, { status: 400 });
+  }
+
+  // Trim and validate length
+  if (name.trim().length > 50) {
+    return NextResponse.json(
+      { error: "Habit name too long (max 50 characters)" },
+      { status: 400 }
+    );
+  }
+
   console.log("[PATCH] params.id:", id, "body:", body);
 
   const { data, error } = await supabase
     .from("habits")
-    .update({ name })
+    .update({ name: name.trim() })
     .eq("id", id)
     .eq("user_id", user.id)
     .select()
