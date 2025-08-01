@@ -66,6 +66,8 @@ export function CreateHabitDialog() {
               className="mt-1"
               maxLength={50}
             />
+            {/* Hiển thị lỗi */}
+            {error && <div className="text-red-500 text-sm pt-1">{error}</div>}
           </div>
 
           <div className="flex gap-2 pt-4">
