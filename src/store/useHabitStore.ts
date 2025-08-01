@@ -129,16 +129,18 @@ export const useHabitStore = create<HabitState>()((set) => ({
       set((state) => ({
         habits: state.habits.filter((habit) => habit.id !== habitId),
         // Also remove related habit records
-        habitRecords: (() => {
-          const newRecords: Record<string, HabitRecord[]> = {};
-          for (const date in state.habitRecords) {
-            const filtered = state.habitRecords[date].filter((record) => record.habit_id !== habitId);
+        habitRecords: Object.entries(state.habitRecords).reduce(
+          (acc, [date, records]) => {
+            const filtered = records.filter(
+              (record) => record.habit_id !== habitId
+            );
             if (filtered.length > 0) {
-              newRecords[date] = filtered;
+              acc[date] = filtered;
             }
-          }
-          return newRecords;
-        })(),
+            return acc;
+          },
+          {} as Record<string, HabitRecord[]>
+        ),
         isLoading: false,
       }));
     } catch (error) {
