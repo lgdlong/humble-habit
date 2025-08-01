@@ -19,18 +19,23 @@ export function CreateHabitDialog() {
   const { createHabit, isLoading } = useHabitStore();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !name.trim()) return;
 
+    // Reset error state before attempting to create habit
+    setError(null);
+
+    // Create habit and handle potential errors
     try {
       await createHabit(user.id, name.trim());
       setName("");
       setOpen(false);
     } catch (error) {
       console.error("Failed to create habit:", error);
-      // Consider showing an error message to the user
+      setError("Failed to create habit. Please try again.");
     }
   };
 
