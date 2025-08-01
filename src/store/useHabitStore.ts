@@ -1,25 +1,34 @@
 "use client";
 
 import { create } from "zustand";
-import { supabase, type HabitEntry } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
+import type { Habit, HabitRecord } from "@/types";
 import { format } from "date-fns";
 
 interface HabitState {
-  habitEntries: Record<string, HabitEntry>;
+  habits: Habit[];
+  habitRecords: Record<string, HabitRecord[]>; // date -> habit records for that date
   currentDate: Date;
   isLoading: boolean;
   error: string | null;
 
   // Actions
   setCurrentDate: (date: Date) => void;
-  loadHabitEntry: (date: Date, userId: string) => Promise<void>;
-  updateHabitEntry: (
-    date: Date,
-    userId: string,
-    habit1: boolean,
-    habit2: boolean
+  loadHabits: (userId: string) => Promise<void>;
+  createHabit: (userId: string, name: string) => Promise<void>;
+  updateHabit: (
+    habitId: string,
+    updates: Partial<Pick<Habit, "name">>
   ) => Promise<void>;
-  loadMonthEntries: (
+  deleteHabit: (habitId: string) => Promise<void>;
+  loadHabitRecords: (date: Date, userId: string) => Promise<void>;
+  updateHabitRecord: (
+    userId: string,
+    habitId: string,
+    date: Date,
+    status: boolean
+  ) => Promise<void>;
+  loadMonthRecords: (
     year: number,
     month: number,
     userId: string
@@ -27,7 +36,8 @@ interface HabitState {
 }
 
 export const useHabitStore = create<HabitState>()((set) => ({
-  habitEntries: {},
+  habits: [],
+  habitRecords: {},
   currentDate: new Date(),
   isLoading: false,
   error: null,
@@ -36,52 +46,146 @@ export const useHabitStore = create<HabitState>()((set) => ({
     set({ currentDate: date });
   },
 
-  loadHabitEntry: async (date: Date, userId: string) => {
+  loadHabits: async (userId: string) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { data, error } = await supabase
+        .from("habits")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      set({ habits: data || [], isLoading: false });
+    } catch (error) {
+      console.error("Error loading habits:", error);
+      set({ error: "Failed to load habits", isLoading: false });
+    }
+  },
+
+  createHabit: async (userId: string, name: string) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { data, error } = await supabase
+        .from("habits")
+        .insert({ user_id: userId, name })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      set((state) => ({
+        habits: [...state.habits, data],
+        isLoading: false,
+      }));
+    } catch (error) {
+      console.error("Error creating habit:", error);
+      set({ error: "Failed to create habit", isLoading: false });
+    }
+  },
+
+  updateHabit: async (
+    habitId: string,
+    updates: Partial<Pick<Habit, "name">>
+  ) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { data, error } = await supabase
+        .from("habits")
+        .update(updates)
+        .eq("id", habitId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      set((state) => ({
+        habits: state.habits.map((habit) =>
+          habit.id === habitId ? data : habit
+        ),
+        isLoading: false,
+      }));
+    } catch (error) {
+      console.error("Error updating habit:", error);
+      set({ error: "Failed to update habit", isLoading: false });
+    }
+  },
+
+  deleteHabit: async (habitId: string) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { error } = await supabase
+        .from("habits")
+        .delete()
+        .eq("id", habitId);
+
+      if (error) throw error;
+
+      set((state) => ({
+        habits: state.habits.filter((habit) => habit.id !== habitId),
+        // Also remove related habit records
+        habitRecords: Object.entries(state.habitRecords).reduce(
+          (acc, [date, records]) => {
+            const filtered = records.filter(
+              (record) => record.habit_id !== habitId
+            );
+            if (filtered.length > 0) {
+              acc[date] = filtered;
+            }
+            return acc;
+          },
+          {} as Record<string, HabitRecord[]>
+        ),
+        isLoading: false,
+      }));
+    } catch (error) {
+      console.error("Error deleting habit:", error);
+      set({ error: "Failed to delete habit", isLoading: false });
+    }
+  },
+
+  loadHabitRecords: async (date: Date, userId: string) => {
     set({ isLoading: true, error: null });
 
     try {
       const dateString = format(date, "yyyy-MM-dd");
 
       const { data, error } = await supabase
-        .from("habit_entries")
-        .select("*")
+        .from("habit_records")
+        .select(
+          `
+          *,
+          habits!inner(name)
+        `
+        )
         .eq("user_id", userId)
-        .eq("date", dateString)
-        .single();
+        .eq("date", dateString);
 
-      if (error && error.code !== "PGRST116") {
-        // PGRST116 = no rows returned
-        throw error;
-      }
-
-      const entry = data || {
-        id: "",
-        user_id: userId,
-        date: dateString,
-        habit_1_completed: false,
-        habit_2_completed: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+      if (error) throw error;
 
       set((state) => ({
-        habitEntries: {
-          ...state.habitEntries,
-          [dateString]: entry,
+        habitRecords: {
+          ...state.habitRecords,
+          [dateString]: data || [],
         },
         isLoading: false,
       }));
     } catch (error) {
-      console.error("Error loading habit entry:", error);
-      set({ error: "Failed to load habit entry", isLoading: false });
+      console.error("Error loading habit records:", error);
+      set({ error: "Failed to load habit records", isLoading: false });
     }
   },
 
-  updateHabitEntry: async (
-    date: Date,
+  updateHabitRecord: async (
     userId: string,
-    habit1: boolean,
-    habit2: boolean
+    habitId: string,
+    date: Date,
+    status: boolean
   ) => {
     set({ isLoading: true, error: null });
 
@@ -89,33 +193,49 @@ export const useHabitStore = create<HabitState>()((set) => ({
       const dateString = format(date, "yyyy-MM-dd");
 
       const { data, error } = await supabase
-        .from("habit_entries")
+        .from("habit_records")
         .upsert({
           user_id: userId,
+          habit_id: habitId,
           date: dateString,
-          habit_1_completed: habit1,
-          habit_2_completed: habit2,
+          status,
           updated_at: new Date().toISOString(),
         })
-        .select()
+        .select(
+          `
+          *,
+          habits!inner(name)
+        `
+        )
         .single();
 
       if (error) throw error;
 
-      set((state) => ({
-        habitEntries: {
-          ...state.habitEntries,
-          [dateString]: data,
-        },
-        isLoading: false,
-      }));
+      set((state) => {
+        const existingRecords = state.habitRecords[dateString] || [];
+        const updatedRecords = existingRecords.some(
+          (record) => record.habit_id === habitId
+        )
+          ? existingRecords.map((record) =>
+              record.habit_id === habitId ? data : record
+            )
+          : [...existingRecords, data];
+
+        return {
+          habitRecords: {
+            ...state.habitRecords,
+            [dateString]: updatedRecords,
+          },
+          isLoading: false,
+        };
+      });
     } catch (error) {
-      console.error("Error updating habit entry:", error);
-      set({ error: "Failed to update habit entry", isLoading: false });
+      console.error("Error updating habit record:", error);
+      set({ error: "Failed to update habit record", isLoading: false });
     }
   },
 
-  loadMonthEntries: async (year: number, month: number, userId: string) => {
+  loadMonthRecords: async (year: number, month: number, userId: string) => {
     set({ isLoading: true, error: null });
 
     try {
@@ -123,29 +243,37 @@ export const useHabitStore = create<HabitState>()((set) => ({
       const endDate = format(new Date(year, month, 0), "yyyy-MM-dd");
 
       const { data, error } = await supabase
-        .from("habit_entries")
-        .select("*")
+        .from("habit_records")
+        .select(
+          `
+          *,
+          habits!inner(name)
+        `
+        )
         .eq("user_id", userId)
         .gte("date", startDate)
         .lte("date", endDate);
 
       if (error) throw error;
 
-      const entriesMap: Record<string, HabitEntry> = {};
-      data?.forEach((entry) => {
-        entriesMap[entry.date] = entry;
+      const recordsMap: Record<string, HabitRecord[]> = {};
+      data?.forEach((record) => {
+        if (!recordsMap[record.date]) {
+          recordsMap[record.date] = [];
+        }
+        recordsMap[record.date].push(record);
       });
 
       set((state) => ({
-        habitEntries: {
-          ...state.habitEntries,
-          ...entriesMap,
+        habitRecords: {
+          ...state.habitRecords,
+          ...recordsMap,
         },
         isLoading: false,
       }));
     } catch (error) {
-      console.error("Error loading month entries:", error);
-      set({ error: "Failed to load month entries", isLoading: false });
+      console.error("Error loading month records:", error);
+      set({ error: "Failed to load month records", isLoading: false });
     }
   },
 }));

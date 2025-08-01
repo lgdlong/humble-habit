@@ -28,16 +28,31 @@ interface MonthViewProps {
 
 export function MonthView({ onSwitchToDay }: MonthViewProps) {
   const { user } = useAuth();
-  const { loadMonthEntries, habitEntries } = useHabitStore();
+  const { loadMonthRecords, loadHabits, habitRecords, habits } =
+    useHabitStore();
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   useEffect(() => {
     if (user) {
+      loadHabits(user.id);
       const year = currentMonth.getFullYear();
       const month = currentMonth.getMonth() + 1;
-      loadMonthEntries(year, month, user.id);
+      loadMonthRecords(year, month, user.id);
     }
-  }, [currentMonth, user, loadMonthEntries]);
+  }, [currentMonth, user, loadMonthRecords, loadHabits]);
+
+  const getHabitColor = (habitId: string) => {
+    const colors = [
+      "#EF4444",
+      "#3B82F6",
+      "#10B981",
+      "#F59E0B",
+      "#8B5CF6",
+      "#EC4899",
+    ];
+    const index = habits.findIndex((h) => h.id === habitId);
+    return colors[index % colors.length] || "#6B7280";
+  };
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(monthStart);
@@ -63,115 +78,119 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
   };
 
   return (
-    <div className="p-6 max-w-md mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <Button variant="ghost" size="icon" onClick={handlePrevMonth}>
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
+    <div className="h-full flex flex-col">
+      <div className="p-6 max-w-md mx-auto pb-20 overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <Button variant="ghost" size="icon" onClick={handlePrevMonth}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
 
-        <h2 className="text-xl font-semibold">
-          {format(currentMonth, "MMMM yyyy")}
-        </h2>
+          <h2 className="text-xl font-semibold">
+            {format(currentMonth, "MMMM yyyy")}
+          </h2>
 
-        <Button variant="ghost" size="icon" onClick={handleNextMonth}>
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
-
-      {/* Calendar Grid */}
-      <div className="space-y-2">
-        {/* Week headers */}
-        <div className="grid grid-cols-7 gap-1 mb-2">
-          {weekDays.map((weekDay) => (
-            <div
-              key={weekDay}
-              className="text-center text-sm font-medium text-muted-foreground p-2"
-            >
-              {weekDay}
-            </div>
-          ))}
+          <Button variant="ghost" size="icon" onClick={handleNextMonth}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
 
-        {/* Calendar days */}
-        <div className="grid grid-cols-7 gap-1">
-          {days.map((dayDate) => {
-            const dateString = format(dayDate, "yyyy-MM-dd");
-            const entry = habitEntries[dateString];
-            const isToday = isSameDay(dayDate, new Date());
-            const isCurrentMonth = isSameMonth(dayDate, currentMonth);
-
-            return (
+        {/* Calendar Grid */}
+        <div className="space-y-2">
+          {/* Week headers */}
+          <div className="grid grid-cols-7 gap-1 mb-2">
+            {weekDays.map((weekDay) => (
               <div
-                key={dayDate.toString()}
-                className={cn(
-                  "relative p-2 text-sm h-12 w-full rounded-md transition-colors",
-                  isToday && "bg-primary text-primary-foreground font-semibold",
-                  !isCurrentMonth && "text-muted-foreground opacity-50"
-                )}
+                key={weekDay}
+                className="text-center text-sm font-medium text-muted-foreground p-2"
               >
-                <span>{format(dayDate, "d")}</span>
-
-                {/* Habit dots */}
-                {entry && (
-                  <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex gap-0.5">
-                    {entry.habit_1_completed && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-red-300" />
-                    )}
-                    {entry.habit_2_completed && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-blue-300" />
-                    )}
-                  </div>
-                )}
+                {weekDay}
               </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Back to Day View Button */}
-      <div className="mt-6 text-center">
-        <Button
-          variant="outline"
-          onClick={onSwitchToDay}
-          className="flex items-center gap-2 mx-auto"
-        >
-          <Calendar className="h-4 w-4" />
-          Back to Today
-        </Button>
-      </div>
-
-      {/* Stats */}
-      <div className="mt-6 text-center space-y-2">
-        <h3 className="text-sm font-medium">This Month Progress</h3>
-        <div className="flex justify-center gap-4 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-red-300" />
-            <span>
-              Habit 1:{" "}
-              {
-                Object.values(habitEntries).filter(
-                  (e) =>
-                    e.habit_1_completed &&
-                    isSameMonth(new Date(e.date), currentMonth)
-                ).length
-              }{" "}
-              days
-            </span>
+            ))}
           </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-blue-300" />
-            <span>
-              Habit 2:{" "}
-              {
-                Object.values(habitEntries).filter(
-                  (e) =>
-                    e.habit_2_completed &&
-                    isSameMonth(new Date(e.date), currentMonth)
-                ).length
-              }{" "}
-              days
-            </span>
+
+          {/* Calendar days */}
+          <div className="grid grid-cols-7 gap-1">
+            {days.map((dayDate) => {
+              const dateString = format(dayDate, "yyyy-MM-dd");
+              const dayRecords = habitRecords[dateString] || [];
+              const completedRecords = dayRecords.filter(
+                (record) => record.status
+              );
+              const isToday = isSameDay(dayDate, new Date());
+              const isCurrentMonth = isSameMonth(dayDate, currentMonth);
+
+              return (
+                <div
+                  key={dayDate.toString()}
+                  className={cn(
+                    "relative p-2 text-sm h-12 w-full rounded-md transition-colors",
+                    isToday &&
+                      "bg-primary text-primary-foreground font-semibold",
+                    !isCurrentMonth && "text-muted-foreground opacity-50"
+                  )}
+                >
+                  <span>{format(dayDate, "d")}</span>
+
+                  {/* Habit dots */}
+                  {completedRecords.length > 0 && (
+                    <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex gap-0.5">
+                      {completedRecords.map((record) => {
+                        const color = getHabitColor(record.habit_id);
+                        return (
+                          <div
+                            key={record.habit_id}
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{ backgroundColor: color }}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Back to Day View Button */}
+        <div className="mt-6 text-center">
+          <Button
+            variant="outline"
+            onClick={onSwitchToDay}
+            className="flex items-center gap-2 mx-auto"
+          >
+            <Calendar className="h-4 w-4" />
+            Back to Today
+          </Button>
+        </div>
+
+        {/* Stats */}
+        <div className="mt-6 text-center space-y-2">
+          <h3 className="text-sm font-medium">This Month Progress</h3>
+          <div className="flex justify-center gap-4 text-xs text-muted-foreground">
+            {habits.map((habit) => {
+              const monthlyCompletions = Object.values(habitRecords)
+                .flat()
+                .filter(
+                  (record) =>
+                    record.habit_id === habit.id &&
+                    record.status &&
+                    isSameMonth(new Date(record.date), currentMonth)
+                ).length;
+
+              return (
+                <div key={habit.id} className="flex items-center gap-1">
+                  <div
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: getHabitColor(habit.id) }}
+                  />
+                  <span>
+                    {habit.name}: {monthlyCompletions} days
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

@@ -4,7 +4,6 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "lucide-react";
 import { HabitToggle } from "./HabitToggle";
-import { QuoteBox } from "./QuoteBox";
 import { useAuth } from "@/hooks/useAuth";
 import { useHabitStore } from "@/store/useHabitStore";
 import { useEffect, useMemo } from "react";
@@ -17,24 +16,25 @@ interface DayViewProps {
 
 export function DayView({ onSwitchToMonth }: DayViewProps) {
   const { user } = useAuth();
-  const { loadHabitEntry } = useHabitStore();
+  const { loadHabits, loadHabitRecords } = useHabitStore();
   const today = useMemo(() => new Date(), []);
 
   useEffect(() => {
     if (user) {
-      loadHabitEntry(today, user.id);
+      loadHabits(user.id);
+      loadHabitRecords(today, user.id);
     }
-  }, [user, loadHabitEntry, today]);
+  }, [user, loadHabits, loadHabitRecords, today]);
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="h-full flex flex-col">
       {/* Main content - centered */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 space-y-8">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 space-y-6">
         {/* Current Date - largest text */}
         <div className="text-center">
           <h1 className="text-4xl font-bold">{format(today, "EEEE")}</h1>
-          <p className="text-xl text-muted-foreground mt-2">
-            {format(today, "MMMM d, yyyy")}
+          <p className="text-3xl text-muted-foreground mt-2">
+            {format(today, "d/M/yyyy")}
           </p>
         </div>
 
@@ -43,7 +43,7 @@ export function DayView({ onSwitchToMonth }: DayViewProps) {
           date={today}
           onSave={() => {
             if (user) {
-              loadHabitEntry(today, user.id);
+              loadHabitRecords(today, user.id);
             }
           }}
         />
@@ -58,9 +58,6 @@ export function DayView({ onSwitchToMonth }: DayViewProps) {
           Month View
         </Button>
       </div>
-
-      {/* Quote at bottom */}
-      <QuoteBox />
     </div>
   );
 }
