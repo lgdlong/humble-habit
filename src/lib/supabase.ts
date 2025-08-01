@@ -1,21 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
-import type { User, Habit, HabitRecord, Quote } from "../types";
+import type { Habit, HabitRecord, Quote } from "../types";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// Legacy database types (current schema)
-export interface HabitEntry {
-  id: string;
-  user_id: string;
-  date: string;
-  habit_1_completed: boolean;
-  habit_2_completed: boolean;
-  created_at: string;
-  updated_at: string;
-}
 
 export interface UserProfile {
   id: string;

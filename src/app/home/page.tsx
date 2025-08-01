@@ -10,7 +10,6 @@ import LoginPage from "@/app/login/page";
 export default function HomePage() {
   const { user, loading } = useAuth();
   const [currentView, setCurrentView] = useState<"day" | "month">("day");
-  const [selectedDate, setSelectedDate] = useState(new Date());
 
   if (loading) {
     return (
@@ -25,17 +24,13 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-screen bg-background flex flex-col">
       <Header />
 
       {currentView === "day" ? (
-        <DayView date={selectedDate} onViewChange={setCurrentView} />
+        <DayView onSwitchToMonth={() => setCurrentView("month")} />
       ) : (
-        <MonthView
-          date={selectedDate}
-          onViewChange={setCurrentView}
-          onDateSelect={setSelectedDate}
-        />
+        <MonthView onSwitchToDay={() => setCurrentView("day")} />
       )}
     </div>
   );

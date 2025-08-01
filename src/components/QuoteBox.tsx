@@ -14,11 +14,11 @@ export function QuoteBox() {
   if (!quote.text) return null;
 
   return (
-    <div className="text-center px-4 py-6">
+    <div className="fixed bottom-0 left-0 right-0 text-center px-4 py-4 bg-background/95 backdrop-blur-sm border-t">
       <p className="italic text-sm text-muted-foreground">
         &ldquo;{quote.text}&rdquo;
       </p>
-      <p className="text-xs text-muted-foreground mt-2">({quote.author})</p>
+      <p className="text-xs text-muted-foreground mt-1">({quote.author})</p>
     </div>
   );
 }

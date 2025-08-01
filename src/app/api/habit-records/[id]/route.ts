@@ -5,10 +5,10 @@ import { cookies } from "next/headers";
 // GET /api/habit-records/[id] - get a single habit record for the logged-in user
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const cookieStore = cookies();
-  const accessToken = (await cookieStore).get("sb-access-token")?.value;
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("sb-access-token")?.value;
   if (!accessToken) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -21,10 +21,15 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = params;
+  const { id } = await params;
   const { data, error } = await supabase
-    .from("habit_entries")
-    .select("*")
+    .from("habit_records")
+    .select(
+      `
+      *,
+      habits!inner(name)
+    `
+    )
     .eq("id", id)
     .eq("user_id", user.id)
     .single();
@@ -39,10 +44,10 @@ export async function GET(
 // PATCH /api/habit-records/[id] - update a habit record
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const cookieStore = cookies();
-  const accessToken = (await cookieStore).get("sb-access-token")?.value;
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("sb-access-token")?.value;
   if (!accessToken) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -55,20 +60,24 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = params;
+  const { id } = await params;
   const body = await req.json();
-  const { habit_1_completed, habit_2_completed } = body;
+  const { status } = body;
 
   const { data, error } = await supabase
-    .from("habit_entries")
+    .from("habit_records")
     .update({
-      habit_1_completed,
-      habit_2_completed,
+      status,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
     .eq("user_id", user.id)
-    .select()
+    .select(
+      `
+      *,
+      habits!inner(name)
+    `
+    )
     .single();
 
   if (error) {
@@ -81,10 +90,10 @@ export async function PATCH(
 // DELETE /api/habit-records/[id] - delete a habit record
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const cookieStore = cookies();
-  const accessToken = (await cookieStore).get("sb-access-token")?.value;
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("sb-access-token")?.value;
   if (!accessToken) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -97,9 +106,9 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = params;
+  const { id } = await params;
   const { error } = await supabase
-    .from("habit_entries")
+    .from("habit_records")
     .delete()
     .eq("id", id)
     .eq("user_id", user.id);
