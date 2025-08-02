@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading } = useAuth();
   const [view, setView] = useState<"day" | "month">("day");
   const router = useRouter();
 

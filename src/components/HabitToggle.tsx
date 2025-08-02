@@ -93,7 +93,9 @@ export function HabitToggle({ date, onSave }: HabitToggleProps) {
                 <div
                   key={record.habit_id}
                   className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: color }}
+                  style={{
+                    backgroundColor: color,
+                  }}
                 />
               );
             })}

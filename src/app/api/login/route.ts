@@ -25,6 +25,8 @@ export async function POST(req: NextRequest) {
             return cookieStore.getAll();
           },
           setAll(cookiesToSet) {
+            // const names = cookiesToSet.map(({ name }) => name);
+            // console.log("[Supabase] Setting cookies:", names);
             cookiesToSet.forEach(({ name, value, options }) => {
               cookieStore.set(name, value, options);
             });
