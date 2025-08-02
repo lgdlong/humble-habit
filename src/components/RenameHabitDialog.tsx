@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useHabitStore } from "@/store/useHabitStore";
 import { Edit2 } from "lucide-react";
-import type { Habit } from "@/types/habit";
+import type { Habit } from "@/types";
 
 interface RenameHabitDialogProps {
   habit: Habit;
