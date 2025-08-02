@@ -1,33 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
 import { cookies } from "next/headers";
+import { SUPABASE_PROJECT_URL } from "@/constants/supabase";
+import { createServerClient } from "@supabase/ssr";
 
 // PATCH /api/habits/[id]/rename - rename a habit with validation
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Await cookies context for SSR
   const cookieStore = await cookies();
-  const accessToken = cookieStore.get("sb-access-token")?.value;
-  console.log("[PATCH RENAME] sb-access-token:", accessToken);
 
-  if (!accessToken) {
-    console.warn("[PATCH RENAME] No access token.");
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Create supabase SSR client with current cookies
+  const supabase = createServerClient(
+    SUPABASE_PROJECT_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => cookieStore.getAll(),
+        setAll: (cookiesToSet) => {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
 
+  // Get user from SSR context
   const {
     data: { user },
     error: userError,
-  } = await supabase.auth.getUser(accessToken);
-  if (userError) console.error("[PATCH RENAME] userError:", userError);
-  console.log("[PATCH RENAME] user:", user);
+  } = await supabase.auth.getUser();
 
-  if (userError || !user) {
+  if (userError) console.error("[PATCH RENAME] userError:", userError);
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = await params;
+  const { id } = await params; // Await the params!
   const body = await req.json();
   const { name } = body;
 
@@ -35,13 +46,19 @@ export async function PATCH(
 
   // Validate name is provided
   if (!name || typeof name !== "string") {
-    return NextResponse.json({ error: "Habit name is required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Habit name is required" },
+      { status: 400 }
+    );
   }
 
   // Trim and validate length
   const trimmedName = name.trim();
   if (trimmedName.length === 0) {
-    return NextResponse.json({ error: "Habit name cannot be empty" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Habit name cannot be empty" },
+      { status: 400 }
+    );
   }
 
   if (trimmedName.length > 50) {
@@ -79,7 +96,10 @@ export async function PATCH(
 
   if (duplicateError) {
     console.error("[PATCH RENAME] duplicateError:", duplicateError);
-    return NextResponse.json({ error: duplicateError.message }, { status: 500 });
+    return NextResponse.json(
+      { error: duplicateError.message },
+      { status: 500 }
+    );
   }
 
   if (duplicateHabits && duplicateHabits.length > 0) {
