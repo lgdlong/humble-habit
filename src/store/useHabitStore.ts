@@ -153,16 +153,18 @@ export const useHabitStore = create<HabitState>()((set) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const { error } = await supabase
-        .from("habits")
-        .delete()
-        .eq("id", habitId);
+      const response = await fetch(`/api/habits/${habitId}`, {
+        method: "DELETE",
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete habit");
+      }
 
       set((state) => ({
         habits: state.habits.filter((habit) => habit.id !== habitId),
-        // Also remove related habit records
+        // Also remove related habit records from local state
         habitRecords: Object.entries(state.habitRecords).reduce(
           (acc, [date, records]) => {
             const filtered = records.filter(
@@ -179,7 +181,9 @@ export const useHabitStore = create<HabitState>()((set) => ({
       }));
     } catch (error) {
       console.error("Error deleting habit:", error);
-      set({ error: "Failed to delete habit", isLoading: false });
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete habit";
+      set({ error: errorMessage, isLoading: false });
+      throw error; // Re-throw to allow UI components to handle the error
     }
   },
 

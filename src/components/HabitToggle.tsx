@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useHabitStore } from "@/store/useHabitStore";
 import { CreateHabitDialog } from "./CreateHabitDialog";
 import { RenameHabitDialog } from "./RenameHabitDialog";
+import { DeleteHabitDialog } from "./DeleteHabitDialog";
 import { format } from "date-fns";
 
 interface HabitToggleProps {
@@ -143,7 +144,10 @@ export function HabitToggle({ date, onSave }: HabitToggleProps) {
                       style={{ backgroundColor: habitColor }}
                     />
                   </label>
-                  <RenameHabitDialog habit={habit} />
+                  <div className="flex items-center gap-1">
+                    <RenameHabitDialog habit={habit} />
+                    <DeleteHabitDialog habit={habit} />
+                  </div>
                 </div>
               );
             })
