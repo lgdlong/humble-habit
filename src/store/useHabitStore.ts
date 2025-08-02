@@ -20,6 +20,7 @@ interface HabitState {
     habitId: string,
     updates: Partial<Pick<Habit, "name">>
   ) => Promise<void>;
+  renameHabit: (habitId: string, name: string) => Promise<void>;
   deleteHabit: (habitId: string) => Promise<void>;
   loadHabitRecords: (date: Date, userId: string) => Promise<void>;
   updateHabitRecord: (
@@ -112,6 +113,39 @@ export const useHabitStore = create<HabitState>()((set) => ({
     } catch (error) {
       console.error("Error updating habit:", error);
       set({ error: "Failed to update habit", isLoading: false });
+    }
+  },
+
+  renameHabit: async (habitId: string, name: string) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const response = await fetch(`/api/habits/${habitId}/rename`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to rename habit");
+      }
+
+      const data = await response.json();
+
+      set((state) => ({
+        habits: state.habits.map((habit) =>
+          habit.id === habitId ? data : habit
+        ),
+        isLoading: false,
+      }));
+    } catch (error) {
+      console.error("Error renaming habit:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to rename habit";
+      set({ error: errorMessage, isLoading: false });
+      throw error; // Re-throw to allow UI components to handle the error
     }
   },
 
