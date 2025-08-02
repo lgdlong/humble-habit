@@ -47,7 +47,7 @@ export function HabitToggle({ date, onSave }: HabitToggleProps) {
   const handleHabitToggle = async (habitId: string, currentStatus: boolean) => {
     if (!user) return;
     try {
-      await updateHabitRecord(user.id, habitId, date, !currentStatus);
+      await updateHabitRecord(user.id, habitId, date, currentStatus);
       onSave?.();
     } catch (error) {
       console.error("Failed to update habit record:", error);
@@ -118,15 +118,15 @@ export function HabitToggle({ date, onSave }: HabitToggleProps) {
             </div>
           ) : (
             habits.map((habit) => {
-              const isCompleted = getHabitStatus(habit.id);
+              const isCompleted: boolean = getHabitStatus(habit.id);
               const habitColor = getHabitColor(habit.id);
               return (
                 <div key={habit.id} className="flex items-center space-x-3">
                   <Checkbox
                     id={habit.id}
                     checked={isCompleted}
-                    onCheckedChange={() =>
-                      handleHabitToggle(habit.id, isCompleted)
+                    onCheckedChange={(checked) =>
+                      handleHabitToggle(habit.id, checked === true)
                     }
                     style={{
                       borderColor: habitColor,
