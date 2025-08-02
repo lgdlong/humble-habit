@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
+import styles from "./Header.module.css";
 
 export function Header() {
   const { theme, setTheme } = useTheme();
@@ -31,7 +32,9 @@ export function Header() {
   return (
     <header className="flex items-center justify-between p-4 border-b">
       <div className="flex items-center gap-4">
-        <h1 className="text-lg font-semibold">Humble Habit</h1>
+        <h1 className={`${styles.titleH1} text-lg font-semibold`}>
+          Humble Habit
+        </h1>
         {user && (
           <span className="ml-2 text-sm text-muted-foreground">
             {getEmailPrefix(user.email)}
