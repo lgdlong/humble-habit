@@ -1,22 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 // GET /api/habits - get all habits for the logged-in user
 export async function GET() {
   const cookieStore = await cookies();
-  const accessToken = cookieStore.get("sb-access-token")?.value;
-  console.log("[GET] sb-access-token:", accessToken);
 
-  if (!accessToken) {
-    console.warn("[GET] No access token found.");
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
 
   const {
     data: { user },
     error: userError,
-  } = await supabase.auth.getUser(accessToken);
+  } = await supabase.auth.getUser();
+
   console.log("[GET] user:", user);
   if (userError) console.error("[GET] userError:", userError);
 
@@ -42,18 +53,29 @@ export async function GET() {
 // POST /api/habits - create a new habit for the logged-in user
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies();
-  const accessToken = cookieStore.get("sb-access-token")?.value;
-  console.log("[POST] sb-access-token:", accessToken);
 
-  if (!accessToken) {
-    console.warn("[POST] No access token found.");
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
 
   const {
     data: { user },
     error: userError,
-  } = await supabase.auth.getUser(accessToken);
+  } = await supabase.auth.getUser();
+
   console.log("[POST] user:", user);
   if (userError) console.error("[POST] userError:", userError);
 
