@@ -1,60 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
-import { cookies } from "next/headers";
+import {
+  createSupabaseServerClient,
+  getAuthenticatedUser,
+} from "@/lib/supabase-server";
 
 // GET /api/habit-records - get all habit records for the logged-in user
 export async function GET() {
-  const cookieStore = cookies();
-  const accessToken = (await cookieStore).get("sb-access-token")?.value;
-  if (!accessToken) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const supabase = await createSupabaseServerClient();
+  const user = await getAuthenticatedUser();
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser(accessToken);
-  if (userError || !user) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // Get habit records from 'habit_records' table
   const { data, error } = await supabase
     .from("habit_records")
-    .select(
-      `
-      *,
-      habits!inner(name)
-    `
-    )
+    .select(`*, habits!inner(name)`)
     .eq("user_id", user.id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
   return NextResponse.json(data);
 }
 
 // POST /api/habit-records - create a new habit record for the logged-in user
 export async function POST(req: NextRequest) {
-  const cookieStore = cookies();
-  const accessToken = (await cookieStore).get("sb-access-token")?.value;
-  if (!accessToken) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const supabase = await createSupabaseServerClient();
+  const user = await getAuthenticatedUser();
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser(accessToken);
-  if (userError || !user) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const body = await req.json();
   const { habit_id, date, status } = body;
-
   const { data, error } = await supabase
     .from("habit_records")
     .upsert({
@@ -64,17 +45,11 @@ export async function POST(req: NextRequest) {
       status,
       updated_at: new Date().toISOString(),
     })
-    .select(
-      `
-      *,
-      habits!inner(name)
-    `
-    )
+    .select(`*, habits!inner(name)`)
     .single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
   return NextResponse.json(data);
 }
