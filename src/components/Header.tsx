@@ -4,10 +4,13 @@ import { Moon, Sun, LogOut } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
+import styles from "./Header.module.css";
 
 export function Header() {
   const { theme, setTheme } = useTheme();
   const { user, signOut } = useAuth();
+  const router = useRouter();
 
   // Extract email before '@'
   const getEmailPrefix = (email?: string) => {
@@ -15,14 +18,23 @@ export function Header() {
     return email.split("@")[0];
   };
 
+  // Handle logout with proper redirect
   const handleSignOut = async () => {
-    await signOut();
+    try {
+      await signOut();
+      // Redirect to login after successful logout
+      router.push("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   return (
     <header className="flex items-center justify-between p-4 border-b">
       <div className="flex items-center gap-4">
-        <h1 className="text-lg font-semibold">Humble Habit</h1>
+        <h1 className={`${styles.titleH1} text-lg font-semibold`}>
+          Humble Habit
+        </h1>
         {user && (
           <span className="ml-2 text-sm text-muted-foreground">
             {getEmailPrefix(user.email)}

@@ -5,9 +5,9 @@ import { cookies } from "next/headers";
 // GET /api/habits/[id] - get a single habit for the logged-in user
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const accessToken = cookieStore.get("sb-access-token")?.value;
   console.log("[GET] sb-access-token:", accessToken);
 
@@ -27,7 +27,7 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = params;
+  const { id } = await params;
   console.log("[GET] params.id:", id);
 
   const { data, error } = await supabase
@@ -49,9 +49,9 @@ export async function GET(
 // PATCH /api/habits/[id] - update a habit
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const accessToken = cookieStore.get("sb-access-token")?.value;
   console.log("[PATCH] sb-access-token:", accessToken);
 
@@ -71,14 +71,33 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = params;
+  const { id } = await params;
   const body = await req.json();
-  const { name, color } = body;
+  const { name } = body;
+
+  // Validate name
+  if (!name || typeof name !== "string") {
+    return NextResponse.json({ error: "Invalid habit name" }, { status: 400 });
+  }
+
+  // Trim and validate length
+  const trimmedName = name.trim();
+  if (trimmedName.length === 0) {
+    return NextResponse.json({ error: "Invalid habit name" }, { status: 400 });
+  }
+
+  if (trimmedName.length > 50) {
+    return NextResponse.json(
+      { error: "Habit name too long (max 50 characters)" },
+      { status: 400 }
+    );
+  }
+
   console.log("[PATCH] params.id:", id, "body:", body);
 
   const { data, error } = await supabase
     .from("habits")
-    .update({ name, color })
+    .update({ name: trimmedName })
     .eq("id", id)
     .eq("user_id", user.id)
     .select()
@@ -96,9 +115,9 @@ export async function PATCH(
 // DELETE /api/habits/[id] - delete a habit
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const accessToken = cookieStore.get("sb-access-token")?.value;
   console.log("[DELETE] sb-access-token:", accessToken);
 
@@ -118,7 +137,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = params;
+  const { id } = await params;
   console.log("[DELETE] params.id:", id);
 
   const { error } = await supabase
