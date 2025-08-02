@@ -126,7 +126,7 @@ export function HabitToggle({ date, onSave }: HabitToggleProps) {
                     id={habit.id}
                     checked={isCompleted}
                     onCheckedChange={(checked) =>
-                      handleHabitToggle(habit.id, Boolean(checked))
+                      handleHabitToggle(habit.id, checked === true)
                     }
                     style={{
                       borderColor: habitColor,
