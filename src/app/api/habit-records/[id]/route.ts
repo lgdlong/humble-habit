@@ -1,41 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import {
+  createSupabaseServerClient,
+  getAuthenticatedUser,
+} from "@/lib/supabase-server";
 
 // GET /api/habit-records/[id] - get a single habit record for the logged-in user
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const cookieStore = await cookies();
+  const user = await getAuthenticatedUser();
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-          });
-        },
-      },
-    }
-  );
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("habit_records")
     .select(
@@ -60,31 +41,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const cookieStore = await cookies();
+  const user = await getAuthenticatedUser();
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-          });
-        },
-      },
-    }
-  );
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -99,6 +58,7 @@ export async function PATCH(
     );
   }
 
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("habit_records")
     .update({
@@ -127,35 +87,14 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const cookieStore = await cookies();
+  const user = await getAuthenticatedUser();
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-          });
-        },
-      },
-    }
-  );
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("habit_records")
     .delete()
