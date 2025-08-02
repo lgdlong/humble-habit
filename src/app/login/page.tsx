@@ -17,16 +17,30 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
   const { login, signUp } = useAuth();
 
+  const handleModeToggle = () => {
+    setIsSignUp(!isSignUp);
+    setConfirmPassword("");
+    setError("");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+
+    // Validate password confirmation for sign-up
+    if (isSignUp && password !== confirmPassword) {
+      setError("Passwords do not match");
+      setIsLoading(false);
+      return;
+    }
 
     const { error } = isSignUp
       ? await signUp(email, password)
@@ -56,6 +70,14 @@ export default function LoginPage() {
         </CardHeader>
 
         <CardContent className="space-y-4">
+          {isSignUp && (
+            <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md">
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                📧 Please use a real email address. We&apos;ll send you a verification email to activate your account.
+              </p>
+            </div>
+          )}
+
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -89,6 +111,21 @@ export default function LoginPage() {
               />
             </div>
 
+            {isSignUp && (
+              <div className="space-y-2">
+                <Input
+                  type="password"
+                  placeholder="Confirm Password"
+                  value={confirmPassword}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setConfirmPassword(e.target.value)
+                  }
+                  required
+                  minLength={6}
+                />
+              </div>
+            )}
+
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Loading..." : isSignUp ? "Sign Up" : "Login"}
             </Button>
@@ -97,7 +134,7 @@ export default function LoginPage() {
           <div className="text-center">
             <Button
               variant="link"
-              onClick={() => setIsSignUp(!isSignUp)}
+              onClick={handleModeToggle}
               className="text-sm"
             >
               {isSignUp
