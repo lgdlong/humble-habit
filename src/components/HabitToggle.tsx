@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
 import { useHabitStore } from "@/store/useHabitStore";
 import { CreateHabitDialog } from "./CreateHabitDialog";
+import { RenameHabitDialog } from "./RenameHabitDialog";
 import { format } from "date-fns";
 
 interface HabitToggleProps {
@@ -132,7 +133,7 @@ export function HabitToggle({ date, onSave }: HabitToggleProps) {
                   />
                   <label
                     htmlFor={habit.id}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2 flex-1"
                   >
                     {habit.name}
                     <div
@@ -140,6 +141,7 @@ export function HabitToggle({ date, onSave }: HabitToggleProps) {
                       style={{ backgroundColor: habitColor }}
                     />
                   </label>
+                  <RenameHabitDialog habit={habit} />
                 </div>
               );
             })
