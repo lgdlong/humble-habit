@@ -4,10 +4,12 @@ import { Moon, Sun, LogOut } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
 
 export function Header() {
   const { theme, setTheme } = useTheme();
   const { user, signOut } = useAuth();
+  const router = useRouter();
 
   // Extract email before '@'
   const getEmailPrefix = (email?: string) => {
@@ -15,8 +17,15 @@ export function Header() {
     return email.split("@")[0];
   };
 
+  // Handle logout with proper redirect
   const handleSignOut = async () => {
-    await signOut();
+    try {
+      await signOut();
+      // Redirect to login after successful logout
+      router.push("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   return (
