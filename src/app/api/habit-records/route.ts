@@ -1,19 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 // GET /api/habit-records - get all habit records for the logged-in user
 export async function GET() {
-  const cookieStore = cookies();
-  const accessToken = (await cookieStore).get("sb-access-token")?.value;
-  if (!accessToken) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const cookieStore = await cookies();
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
 
   const {
     data: { user },
     error: userError,
-  } = await supabase.auth.getUser(accessToken);
+  } = await supabase.auth.getUser();
+
   if (userError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -38,16 +52,30 @@ export async function GET() {
 
 // POST /api/habit-records - create a new habit record for the logged-in user
 export async function POST(req: NextRequest) {
-  const cookieStore = cookies();
-  const accessToken = (await cookieStore).get("sb-access-token")?.value;
-  if (!accessToken) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const cookieStore = await cookies();
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
 
   const {
     data: { user },
     error: userError,
-  } = await supabase.auth.getUser(accessToken);
+  } = await supabase.auth.getUser();
+
   if (userError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

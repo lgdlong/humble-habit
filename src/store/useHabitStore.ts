@@ -20,6 +20,7 @@ interface HabitState {
     habitId: string,
     updates: Partial<Pick<Habit, "name">>
   ) => Promise<void>;
+  renameHabit: (habitId: string, name: string) => Promise<void>;
   deleteHabit: (habitId: string) => Promise<void>;
   loadHabitRecords: (date: Date, userId: string) => Promise<void>;
   updateHabitRecord: (
@@ -115,20 +116,56 @@ export const useHabitStore = create<HabitState>()((set) => ({
     }
   },
 
+  renameHabit: async (habitId: string, name: string) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const response = await fetch(`/api/habits/${habitId}/rename`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to rename habit");
+      }
+
+      const data = await response.json();
+
+      set((state) => ({
+        habits: state.habits.map((habit) =>
+          habit.id === habitId ? data : habit
+        ),
+        isLoading: false,
+      }));
+    } catch (error) {
+      console.error("Error renaming habit:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to rename habit";
+      set({ error: errorMessage, isLoading: false });
+      throw error; // Re-throw to allow UI components to handle the error
+    }
+  },
+
   deleteHabit: async (habitId: string) => {
     set({ isLoading: true, error: null });
 
     try {
-      const { error } = await supabase
-        .from("habits")
-        .delete()
-        .eq("id", habitId);
+      const response = await fetch(`/api/habits/${habitId}`, {
+        method: "DELETE",
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete habit");
+      }
 
       set((state) => ({
         habits: state.habits.filter((habit) => habit.id !== habitId),
-        // Also remove related habit records
+        // Also remove related habit records from local state
         habitRecords: Object.entries(state.habitRecords).reduce(
           (acc, [date, records]) => {
             const filtered = records.filter(
@@ -145,7 +182,9 @@ export const useHabitStore = create<HabitState>()((set) => ({
       }));
     } catch (error) {
       console.error("Error deleting habit:", error);
-      set({ error: "Failed to delete habit", isLoading: false });
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete habit";
+      set({ error: errorMessage, isLoading: false });
+      throw error; // Re-throw to allow UI components to handle the error
     }
   },
 
@@ -187,32 +226,49 @@ export const useHabitStore = create<HabitState>()((set) => ({
     date: Date,
     status: boolean
   ) => {
+    // Set loading state and clear previous error
     set({ isLoading: true, error: null });
 
     try {
       const dateString = format(date, "yyyy-MM-dd");
 
+      // Perform upsert to either insert or update the record for this user/habit/date
+      // Use onConflict to ensure upsert works on (user_id, habit_id, date) as unique constraint
       const { data, error } = await supabase
         .from("habit_records")
-        .upsert({
-          user_id: userId,
-          habit_id: habitId,
-          date: dateString,
-          status,
-          updated_at: new Date().toISOString(),
-        })
+        .upsert(
+          {
+            user_id: userId,
+            habit_id: habitId,
+            date: dateString,
+            status,
+            updated_at: new Date().toISOString(),
+          },
+          // Ensures that upsert uses (user_id, habit_id, date) as the unique key.
+          // If a record already exists with this combination, Supabase will update it.
+          // If not, Supabase will insert a new record.
+          // This avoids duplicate entries and makes sure only one record exists per user/habit/date.
+          {
+            onConflict: "user_id,habit_id,date",
+          }
+        )
         .select(
           `
-          *,
-          habits!inner(name)
-        `
+        *,
+        habits!inner(name)
+      `
         )
         .single();
 
+      // If there was an error during upsert, throw to catch below
       if (error) throw error;
 
+      // Update Zustand store with the new/updated record
       set((state) => {
+        // Get existing records for the date (or empty array)
         const existingRecords = state.habitRecords[dateString] || [];
+
+        // If record exists, update it; if not, add the new record
         const updatedRecords = existingRecords.some(
           (record) => record.habit_id === habitId
         )
@@ -230,6 +286,7 @@ export const useHabitStore = create<HabitState>()((set) => ({
         };
       });
     } catch (error) {
+      // Log any error to console and set error message in store
       console.error("Error updating habit record:", error);
       set({ error: "Failed to update habit record", isLoading: false });
     }

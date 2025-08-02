@@ -1,0 +1,5 @@
+@media (max-width: 639px) {
+  .titleH1 {
+    display: none;
+  }
+}
