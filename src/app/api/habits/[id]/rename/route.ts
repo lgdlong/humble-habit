@@ -1,39 +1,17 @@
+// src/app/api/habits/[id]/rename/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { SUPABASE_PROJECT_URL } from "@/constants/supabase";
-import { createServerClient } from "@supabase/ssr";
+import {
+  createSupabaseServerClient,
+  getAuthenticatedUser,
+} from "@/lib/supabase-server";
 
 // PATCH /api/habits/[id]/rename - rename a habit with validation
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Await cookies context for SSR
-  const cookieStore = await cookies();
+  const user = await getAuthenticatedUser();
 
-  // Create supabase SSR client with current cookies
-  const supabase = createServerClient(
-    SUPABASE_PROJECT_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => cookieStore.getAll(),
-        setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
-  // Get user from SSR context
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError) console.error("[PATCH RENAME] userError:", userError);
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -69,6 +47,7 @@ export async function PATCH(
   }
 
   // Check if habit exists and belongs to user
+  const supabase = await createSupabaseServerClient();
   const { data: existingHabit, error: habitError } = await supabase
     .from("habits")
     .select("id, name")
