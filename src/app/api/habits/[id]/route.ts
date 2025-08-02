@@ -1,35 +1,25 @@
+// src/app/api/habits/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
-import { cookies } from "next/headers";
+import {
+  createSupabaseServerClient,
+  getAuthenticatedUser,
+} from "@/lib/supabase-server";
 
 // GET /api/habits/[id] - get a single habit for the logged-in user
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("sb-access-token")?.value;
-  console.log("[GET] sb-access-token:", accessToken);
+  const user = await getAuthenticatedUser();
 
-  if (!accessToken) {
-    console.warn("[GET] No access token.");
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser(accessToken);
-  if (userError) console.error("[GET] userError:", userError);
-  console.log("[GET] user:", user);
-
-  if (userError || !user) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
   console.log("[GET] params.id:", id);
 
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("habits")
     .select("*")
@@ -51,23 +41,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("sb-access-token")?.value;
-  console.log("[PATCH] sb-access-token:", accessToken);
+  const user = await getAuthenticatedUser();
 
-  if (!accessToken) {
-    console.warn("[PATCH] No access token.");
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser(accessToken);
-  if (userError) console.error("[PATCH] userError:", userError);
-  console.log("[PATCH] user:", user);
-
-  if (userError || !user) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -95,6 +71,7 @@ export async function PATCH(
 
   console.log("[PATCH] params.id:", id, "body:", body);
 
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("habits")
     .update({ name: trimmedName })
@@ -117,29 +94,16 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("sb-access-token")?.value;
-  console.log("[DELETE] sb-access-token:", accessToken);
+  const user = await getAuthenticatedUser();
 
-  if (!accessToken) {
-    console.warn("[DELETE] No access token.");
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser(accessToken);
-  if (userError) console.error("[DELETE] userError:", userError);
-  console.log("[DELETE] user:", user);
-
-  if (userError || !user) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
   console.log("[DELETE] params.id:", id);
 
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("habits")
     .delete()
