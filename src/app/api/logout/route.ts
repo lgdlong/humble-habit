@@ -21,7 +21,7 @@ export async function POST() {
             });
           },
         },
-      }
+      },
     );
 
     // Sign out the user
@@ -39,7 +39,7 @@ export async function POST() {
     console.error("Unexpected error during logout:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

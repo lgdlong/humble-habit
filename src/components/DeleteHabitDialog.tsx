@@ -70,12 +70,14 @@ export function DeleteHabitDialog({ habit }: DeleteHabitDialogProps) {
 
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Are you sure you want to delete <strong>&ldquo;{habit.name}&rdquo;</strong>?
+            Are you sure you want to delete{" "}
+            <strong>&ldquo;{habit.name}&rdquo;</strong>?
           </p>
-          
+
           <Alert variant="destructive">
             <AlertDescription>
-              <strong>Warning:</strong> This will permanently delete all data and history related to this habit. This action cannot be undone.
+              <strong>Warning:</strong> This will permanently delete all data
+              and history related to this habit. This action cannot be undone.
             </AlertDescription>
           </Alert>
 

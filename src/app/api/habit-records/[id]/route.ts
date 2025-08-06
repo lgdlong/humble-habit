@@ -7,7 +7,7 @@ import {
 // GET /api/habit-records/[id] - get a single habit record for the logged-in user
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getAuthenticatedUser();
 
@@ -23,7 +23,7 @@ export async function GET(
       `
       *,
       habits!inner(name)
-    `
+    `,
     )
     .eq("id", id)
     .eq("user_id", user.id)
@@ -39,7 +39,7 @@ export async function GET(
 // PATCH /api/habit-records/[id] - update a habit record
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getAuthenticatedUser();
 
@@ -54,7 +54,7 @@ export async function PATCH(
   if (typeof status !== "boolean") {
     return NextResponse.json(
       { error: "Status must be a boolean value" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -71,7 +71,7 @@ export async function PATCH(
       `
       *,
       habits!inner(name)
-    `
+    `,
     )
     .single();
 
@@ -85,7 +85,7 @@ export async function PATCH(
 // DELETE /api/habit-records/[id] - delete a habit record
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getAuthenticatedUser();
 

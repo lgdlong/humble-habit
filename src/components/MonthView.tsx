@@ -120,7 +120,7 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
               const dateString = format(dayDate, "yyyy-MM-dd");
               const dayRecords = habitRecords[dateString] || [];
               const completedRecords = dayRecords.filter(
-                (record) => record.status
+                (record) => record.status,
               );
               const isToday = isSameDay(dayDate, new Date());
               const isCurrentMonth = isSameMonth(dayDate, currentMonth);
@@ -132,7 +132,7 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
                     "relative p-2 text-sm h-12 w-full rounded-md transition-colors",
                     isToday &&
                       "bg-primary text-primary-foreground font-semibold",
-                    !isCurrentMonth && "text-muted-foreground opacity-50"
+                    !isCurrentMonth && "text-muted-foreground opacity-50",
                   )}
                 >
                   <span>{format(dayDate, "d")}</span>
