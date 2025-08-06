@@ -3,7 +3,8 @@
 ## Prerequisites
 
 Make sure you have the following installed:
-- Node.js 18+ 
+
+- Node.js 18+
 - pnpm (recommended) or npm/yarn
 - A Supabase account
 
@@ -11,16 +12,19 @@ Make sure you have the following installed:
 
 1. **Clone the repository** (if you haven't already)
 2. **Install dependencies:**
+
    ```bash
    pnpm install
    ```
 
 3. **Set up environment variables:**
+
    ```bash
    cp .env.local.example .env.local
    ```
-   
+
    Edit `.env.local` with your Supabase credentials:
+
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
@@ -33,10 +37,11 @@ Make sure you have the following installed:
    - Execute the SQL to create tables and policies
 
 5. **Start the development server:**
+
    ```bash
    pnpm dev
    ```
-   
+
    Open [http://localhost:3000](http://localhost:3000)
 
 ## Testing the App
@@ -61,7 +66,7 @@ Make sure you have the following installed:
 ✅ **Month View:** Calendar with habit dots, progress stats  
 ✅ **Mobile-First:** Responsive design that works on all devices  
 ✅ **No Scrolling:** Everything fits in one viewport  
-✅ **Humble Philosophy:** No streaks, just honest progress  
+✅ **Humble Philosophy:** No streaks, just honest progress
 
 ## File Structure
 
@@ -86,6 +91,7 @@ Make sure you have the following installed:
 ## Next Steps
 
 The app is production-ready! You can:
+
 1. Deploy to Vercel, Netlify, or any hosting platform
 2. Set up environment variables on your hosting platform
 3. Configure a custom domain

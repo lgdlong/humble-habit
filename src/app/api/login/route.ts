@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     if (!email || !password) {
       return NextResponse.json(
         { error: "Email and password are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
             });
           },
         },
-      }
+      },
     );
 
     // Attempt to sign in with email and password
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     if (!data.user || !data.session) {
       return NextResponse.json(
         { error: "Invalid credentials" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     console.error("Unexpected error during login:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
