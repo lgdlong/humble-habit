@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   format,
   startOfMonth,
@@ -17,12 +17,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useHabitStore } from "@/store/useHabitStore";
-import { calculateFailureStreaks } from "@/lib/utils";
-
-// Simple cn implementation (if not using a library)
-function cn(...classes: (string | false | null | undefined)[]) {
-  return classes.filter(Boolean).join(" ");
-}
+import { calculateFailureStreaks, cn } from "@/lib/utils";
 
 interface MonthViewProps {
   date?: Date;
@@ -35,6 +30,10 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
   const { user } = useAuth();
   const { loadMonthRecords, loadHabits, habitRecords, habits } =
     useHabitStore();
+  const allRecords = useMemo(
+    () => Object.values(habitRecords).flat(),
+    [habitRecords]
+  );
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   useEffect(() => {
@@ -120,7 +119,7 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
               const dateString = format(dayDate, "yyyy-MM-dd");
               const dayRecords = habitRecords[dateString] || [];
               const completedRecords = dayRecords.filter(
-                (record) => record.status,
+                (record) => record.status
               );
               const isToday = isSameDay(dayDate, new Date());
               const isCurrentMonth = isSameMonth(dayDate, currentMonth);
@@ -132,7 +131,7 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
                     "relative p-2 text-sm h-12 w-full rounded-md transition-colors",
                     isToday &&
                       "bg-primary text-primary-foreground font-semibold",
-                    !isCurrentMonth && "text-muted-foreground opacity-50",
+                    !isCurrentMonth && "text-muted-foreground opacity-50"
                   )}
                 >
                   <span>{format(dayDate, "d")}</span>
@@ -175,10 +174,6 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
           <h3 className="text-xl font-medium">Your Progress</h3>
           <div className="flex justify-center gap-4 text-xs text-muted-foreground">
             {habits.map((habit) => {
-              // Gộp toàn bộ records lại thành 1 mảng
-              const allRecords = Object.values(habitRecords).flat();
-
-              // Lọc những records của habit hiện tại
               const habitRecordList = allRecords.filter(
                 (record) => record.habit_id === habit.id
               );
