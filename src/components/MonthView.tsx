@@ -17,7 +17,12 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useHabitStore } from "@/store/useHabitStore";
-import { cn } from "@/lib/utils";
+import { calculateFailureStreaks } from "@/lib/utils";
+
+// Simple cn implementation (if not using a library)
+function cn(...classes: (string | false | null | undefined)[]) {
+  return classes.filter(Boolean).join(" ");
+}
 
 interface MonthViewProps {
   date?: Date;
@@ -167,27 +172,55 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
 
         {/* Stats */}
         <div className="mt-6 text-center space-y-2">
-          <h3 className="text-sm font-medium">This Month Progress</h3>
+          <h3 className="text-xl font-medium">Your Progress</h3>
           <div className="flex justify-center gap-4 text-xs text-muted-foreground">
             {habits.map((habit) => {
-              const monthlyCompletions = Object.values(habitRecords)
-                .flat()
-                .filter(
-                  (record) =>
-                    record.habit_id === habit.id &&
-                    record.status &&
-                    isSameMonth(new Date(record.date), currentMonth),
-                ).length;
+              // Gộp toàn bộ records lại thành 1 mảng
+              const allRecords = Object.values(habitRecords).flat();
+
+              // Lọc những records của habit hiện tại
+              const habitRecordList = allRecords.filter(
+                (record) => record.habit_id === habit.id
+              );
+
+              const totalCompletions = habitRecordList.filter(
+                (record) => record.status
+              ).length;
+
+              const { longestFailureStreak } = calculateFailureStreaks(
+                habitRecordList,
+                habit.id,
+                habit.created_at ?? format(new Date(), "yyyy-MM-dd")
+              );
 
               return (
-                <div key={habit.id} className="flex items-center gap-1">
-                  <div
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: getHabitColor(habit.id) }}
-                  />
-                  <span>
-                    {habit.name}: {monthlyCompletions} days
-                  </span>
+                <div
+                  key={habit.id}
+                  className="border rounded-xl p-3 shadow-sm space-y-1"
+                >
+                  <div className="flex flex-col items-start gap-2 font-normal">
+                    <div className="flex flex-row items-center gap-2">
+                      <div
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: getHabitColor(habit.id) }}
+                      />
+                      <strong>{habit.name}</strong>
+                    </div>
+                    <span>
+                      Completed:{" "}
+                      <strong className="text-green-600">
+                        {totalCompletions}
+                      </strong>{" "}
+                      days
+                    </span>
+                    <span>
+                      Longest failure streak:{" "}
+                      <strong className="text-red-400">
+                        {longestFailureStreak}
+                      </strong>{" "}
+                      days
+                    </span>
+                  </div>
                 </div>
               );
             })}
