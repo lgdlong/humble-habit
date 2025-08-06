@@ -8,7 +8,7 @@ import {
 // PATCH /api/habits/[id]/rename - rename a habit with validation
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getAuthenticatedUser();
 
@@ -26,7 +26,7 @@ export async function PATCH(
   if (!name || typeof name !== "string") {
     return NextResponse.json(
       { error: "Habit name is required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -35,14 +35,14 @@ export async function PATCH(
   if (trimmedName.length === 0) {
     return NextResponse.json(
       { error: "Habit name cannot be empty" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (trimmedName.length > 50) {
     return NextResponse.json(
       { error: "Habit name too long (max 50 characters)" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -77,14 +77,14 @@ export async function PATCH(
     console.error("[PATCH RENAME] duplicateError:", duplicateError);
     return NextResponse.json(
       { error: duplicateError.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
   if (duplicateHabits && duplicateHabits.length > 0) {
     return NextResponse.json(
       { error: "A habit with this name already exists" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 

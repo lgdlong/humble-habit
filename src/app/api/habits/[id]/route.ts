@@ -8,7 +8,7 @@ import {
 // GET /api/habits/[id] - get a single habit for the logged-in user
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getAuthenticatedUser();
 
@@ -39,7 +39,7 @@ export async function GET(
 // PATCH /api/habits/[id] - update a habit
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getAuthenticatedUser();
 
@@ -65,7 +65,7 @@ export async function PATCH(
   if (trimmedName.length > 50) {
     return NextResponse.json(
       { error: "Habit name too long (max 50 characters)" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -92,7 +92,7 @@ export async function PATCH(
 // DELETE /api/habits/[id] - delete a habit
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getAuthenticatedUser();
 

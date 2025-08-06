@@ -20,7 +20,7 @@ export async function GET() {
           });
         },
       },
-    }
+    },
   );
 
   const {
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
           });
         },
       },
-    }
+    },
   );
 
   const {
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
   if (habits && habits.length >= 2) {
     return NextResponse.json(
       { error: "Maximum 2 habits allowed." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 

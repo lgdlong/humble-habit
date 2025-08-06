@@ -18,7 +18,7 @@ interface HabitState {
   createHabit: (userId: string, name: string) => Promise<void>;
   updateHabit: (
     habitId: string,
-    updates: Partial<Pick<Habit, "name">>
+    updates: Partial<Pick<Habit, "name">>,
   ) => Promise<void>;
   renameHabit: (habitId: string, name: string) => Promise<void>;
   deleteHabit: (habitId: string) => Promise<void>;
@@ -27,12 +27,12 @@ interface HabitState {
     userId: string,
     habitId: string,
     date: Date,
-    status: boolean
+    status: boolean,
   ) => Promise<void>;
   loadMonthRecords: (
     year: number,
     month: number,
-    userId: string
+    userId: string,
   ) => Promise<void>;
 }
 
@@ -90,7 +90,7 @@ export const useHabitStore = create<HabitState>()((set) => ({
 
   updateHabit: async (
     habitId: string,
-    updates: Partial<Pick<Habit, "name">>
+    updates: Partial<Pick<Habit, "name">>,
   ) => {
     set({ isLoading: true, error: null });
 
@@ -106,7 +106,7 @@ export const useHabitStore = create<HabitState>()((set) => ({
 
       set((state) => ({
         habits: state.habits.map((habit) =>
-          habit.id === habitId ? data : habit
+          habit.id === habitId ? data : habit,
         ),
         isLoading: false,
       }));
@@ -137,7 +137,7 @@ export const useHabitStore = create<HabitState>()((set) => ({
 
       set((state) => ({
         habits: state.habits.map((habit) =>
-          habit.id === habitId ? data : habit
+          habit.id === habitId ? data : habit,
         ),
         isLoading: false,
       }));
@@ -169,20 +169,21 @@ export const useHabitStore = create<HabitState>()((set) => ({
         habitRecords: Object.entries(state.habitRecords).reduce(
           (acc, [date, records]) => {
             const filtered = records.filter(
-              (record) => record.habit_id !== habitId
+              (record) => record.habit_id !== habitId,
             );
             if (filtered.length > 0) {
               acc[date] = filtered;
             }
             return acc;
           },
-          {} as Record<string, HabitRecord[]>
+          {} as Record<string, HabitRecord[]>,
         ),
         isLoading: false,
       }));
     } catch (error) {
       console.error("Error deleting habit:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to delete habit";
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to delete habit";
       set({ error: errorMessage, isLoading: false });
       throw error; // Re-throw to allow UI components to handle the error
     }
@@ -200,7 +201,7 @@ export const useHabitStore = create<HabitState>()((set) => ({
           `
           *,
           habits!inner(name)
-        `
+        `,
         )
         .eq("user_id", userId)
         .eq("date", dateString);
@@ -224,7 +225,7 @@ export const useHabitStore = create<HabitState>()((set) => ({
     userId: string,
     habitId: string,
     date: Date,
-    status: boolean
+    status: boolean,
   ) => {
     // Set loading state and clear previous error
     set({ isLoading: true, error: null });
@@ -250,13 +251,13 @@ export const useHabitStore = create<HabitState>()((set) => ({
           // This avoids duplicate entries and makes sure only one record exists per user/habit/date.
           {
             onConflict: "user_id,habit_id,date",
-          }
+          },
         )
         .select(
           `
         *,
         habits!inner(name)
-      `
+      `,
         )
         .single();
 
@@ -270,10 +271,10 @@ export const useHabitStore = create<HabitState>()((set) => ({
 
         // If record exists, update it; if not, add the new record
         const updatedRecords = existingRecords.some(
-          (record) => record.habit_id === habitId
+          (record) => record.habit_id === habitId,
         )
           ? existingRecords.map((record) =>
-              record.habit_id === habitId ? data : record
+              record.habit_id === habitId ? data : record,
             )
           : [...existingRecords, data];
 
@@ -305,7 +306,7 @@ export const useHabitStore = create<HabitState>()((set) => ({
           `
           *,
           habits!inner(name)
-        `
+        `,
         )
         .eq("user_id", userId)
         .gte("date", startDate)

@@ -69,10 +69,12 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ## Usage 📱
 
 ### Authentication
+
 - Users must sign up/login before accessing the app
 - Simple email/password authentication via Supabase
 
 ### Day View (Home)
+
 - Shows current date prominently
 - "Check Habits" button opens a modal with 2 habits
 - Completed habits show as colored tags (red & blue)
@@ -80,6 +82,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - Switch to month view
 
 ### Month View
+
 - Calendar grid showing the current month
 - Colored dots indicate completed habits for each day
 - Today's date is highlighted
@@ -88,6 +91,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - Return to day view
 
 ### The Philosophy
+
 - **No streaks** - no pressure from broken chains
 - **No gamification** - no points, levels, or badges
 - **Just real progress** - honest tracking of your habits
@@ -96,6 +100,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ## Customization 🎨
 
 ### Adding More Habits
+
 Currently limited to 2 habits by design. To add more:
 
 1. Update database schema in `database-schema.sql`
@@ -104,13 +109,16 @@ Currently limited to 2 habits by design. To add more:
 4. Add new colors to the color scheme
 
 ### Changing Colors
+
 Habit colors are defined as:
+
 - Habit 1: `bg-red-300` (red)
 - Habit 2: `bg-blue-300` (blue)
 
 To change colors, update these classes throughout the components.
 
 ### Adding Quotes
+
 Edit `src/lib/quotes.ts` to add your own motivational quotes.
 
 ## Project Structure 📁
@@ -153,6 +161,7 @@ MIT License - see LICENSE file for details.
 ## Support 💬
 
 For questions or issues:
+
 - Open an issue on GitHub
 - Check the documentation
 - Review the code comments
