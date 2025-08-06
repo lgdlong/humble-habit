@@ -193,61 +193,6 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
                 habit.created_at ?? format(new Date(), "yyyy-MM-dd")
               );
 
-              // return (
-              //   <div
-              //     key={habit.id}
-              //     className="flex flex-col items-start gap-1 text-center"
-              //   >
-              //     <div className="flex items-center gap-1">
-              //       <div
-              //         className="w-2 h-2 rounded-full"
-              //         style={{ backgroundColor: getHabitColor(habit.id) }}
-              //       />
-              //       <span className="font-medium">
-              //         {habit.name}: {totalCompletions} days
-              //       </span>
-              //     </div>
-              //     <div className="text-start text-xs space-y-0.5 text-muted-foreground">
-              //       <div>
-              //         <span className="font-medium">
-              //           Longest failure streak: {longestFailureStreak} days
-              //         </span>
-              //       </div>
-              //     </div>
-              //   </div>
-              // );
-              // return (
-              //   <div key={habit.id} className="flex items-center gap-2 text-sm">
-              //     <div
-              //       className="w-2 h-2 rounded-full"
-              //       style={{ backgroundColor: getHabitColor(habit.id) }}
-              //     />
-              //     <span className="font-medium">{habit.name}</span>
-              //     <span className="text-muted-foreground text-xs ml-auto">
-              //       ✅ {totalCompletions} • ❌ {longestFailureStreak}
-              //     </span>
-              //   </div>
-              // );
-              // return (
-              //   <div
-              //     key={habit.id}
-              //     className="border rounded-xl p-3 space-y-1 shadow-sm"
-              //   >
-              //     <div className="flex items-center gap-2 font-medium">
-              //       <div
-              //         className="w-2 h-2 rounded-full"
-              //         style={{ backgroundColor: getHabitColor(habit.id) }}
-              //       />
-              //       <span>{habit.name}</span>
-              //     </div>
-              //     <div className="text-muted-foreground text-sm pl-4 space-y-0.5">
-              //       <div>Completed: {monthlyCompletions} days this month</div>
-              //       <div>
-              //         Longest failure streak: {longestFailureStreak} days
-              //       </div>
-              //     </div>
-              //   </div>
-              // );
               return (
                 <div
                   key={habit.id}
