@@ -1,67 +1,56 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
-import { HabitRecord } from "@/types"
-import { parseISO, isAfter, startOfDay } from "date-fns"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+import { HabitRecord } from "@/types";
+import { eachDayOfInterval, format, parseISO, startOfDay } from "date-fns";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
-/**
- * Calculate the longest failure streak for a habit based on its records
- * @param habitRecords Array of habit records for a specific habit
- * @param habitId The ID of the habit to calculate streak for
- * @returns Object containing current failure streak and longest failure streak
- */
 export function calculateFailureStreaks(
   habitRecords: HabitRecord[],
-  habitId: string
-): { currentFailureStreak: number; longestFailureStreak: number } {
-  // Filter records for this specific habit and sort by date (newest first)
-  const habitSpecificRecords = habitRecords
-    .filter((record) => record.habit_id === habitId)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-  if (habitSpecificRecords.length === 0) {
-    return { currentFailureStreak: 0, longestFailureStreak: 0 };
-  }
-
+  habitId: string,
+  habitStartDate: string
+): {
+  currentFailureStreak: number;
+  longestFailureStreak: number;
+} {
   const today = startOfDay(new Date());
+  const startDate = startOfDay(parseISO(habitStartDate));
 
-  // Calculate current failure streak (from most recent date backward)
-  let currentFailureStreak = 0;
-  for (const record of habitSpecificRecords) {
-    const recordDate = parseISO(record.date);
-    
-    // Only count records up to today (not future dates)
-    if (isAfter(recordDate, today)) {
-      continue;
-    }
-
-    if (record.status === false) {
-      currentFailureStreak++;
-    } else {
-      // Hit a success, stop counting current streak
-      break;
+  // Tạo map: "YYYY-MM-DD" => status (true = success, false = fail or skipped)
+  const statusMap = new Map<string, boolean>();
+  for (const r of habitRecords) {
+    if (r.habit_id === habitId) {
+      statusMap.set(r.date, r.status === true);
     }
   }
 
-  // Calculate longest failure streak by scanning all records chronologically
-  const recordsByDate = habitSpecificRecords
-    .filter(record => !isAfter(parseISO(record.date), today))
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const allDates = eachDayOfInterval({ start: startDate, end: today });
 
-  let longestFailureStreak = 0;
-  let tempFailureStreak = 0;
+  let currentStreak = 0;
+  let longestStreak = 0;
 
-  for (const record of recordsByDate) {
-    if (record.status === false) {
-      tempFailureStreak++;
-      longestFailureStreak = Math.max(longestFailureStreak, tempFailureStreak);
+  for (let i = 0; i < allDates.length; i++) {
+    const dateStr = format(allDates[i], "yyyy-MM-dd");
+    const isFailure = !statusMap.get(dateStr); // false or undefined
+
+    if (isFailure) {
+      currentStreak++;
+      longestStreak = Math.max(longestStreak, currentStreak);
     } else {
-      tempFailureStreak = 0;
+      currentStreak = 0;
     }
   }
 
-  return { currentFailureStreak, longestFailureStreak };
+  // Kiểm tra ngày cuối cùng có phải đang trong chuỗi thất bại không
+  const lastDateStr = format(today, "yyyy-MM-dd");
+  const isLastFailure = !statusMap.get(lastDateStr);
+
+  const currentFailureStreak = isLastFailure ? currentStreak : 0;
+
+  return {
+    currentFailureStreak,
+    longestFailureStreak: longestStreak,
+  };
 }
