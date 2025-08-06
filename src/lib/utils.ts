@@ -10,7 +10,7 @@ export function cn(...inputs: ClassValue[]) {
 export function calculateFailureStreaks(
   habitRecords: HabitRecord[],
   habitId: string,
-  habitStartDate: string,
+  habitStartDate: string
 ): {
   currentFailureStreak: number;
   longestFailureStreak: number;
@@ -18,7 +18,7 @@ export function calculateFailureStreaks(
   const today = startOfDay(new Date());
   const startDate = startOfDay(parseISO(habitStartDate));
 
-  // Tạo map: "YYYY-MM-DD" => status (true = success, false = fail or skipped)
+  // Map: "YYYY-MM-DD" => status (true = success, false = fail/skipped)
   const statusMap = new Map<string, boolean>();
   for (const r of habitRecords) {
     if (r.habit_id === habitId) {
@@ -28,29 +28,35 @@ export function calculateFailureStreaks(
 
   const allDates = eachDayOfInterval({ start: startDate, end: today });
 
-  let currentStreak = 0;
-  let longestStreak = 0;
+  let tempStreak = 0;
+  let longestFailureStreak = 0;
 
   for (let i = 0; i < allDates.length; i++) {
     const dateStr = format(allDates[i], "yyyy-MM-dd");
     const isFailure = !statusMap.get(dateStr); // false or undefined
 
     if (isFailure) {
-      currentStreak++;
-      longestStreak = Math.max(longestStreak, currentStreak);
+      tempStreak++;
+      longestFailureStreak = Math.max(longestFailureStreak, tempStreak);
     } else {
-      currentStreak = 0;
+      tempStreak = 0;
     }
   }
 
-  // Kiểm tra ngày cuối cùng có phải đang trong chuỗi thất bại không
-  const lastDateStr = format(today, "yyyy-MM-dd");
-  const isLastFailure = !statusMap.get(lastDateStr);
-
-  const currentFailureStreak = isLastFailure ? currentStreak : 0;
+  // Tính currentFailureStreak bằng cách lùi từ hôm nay về trước
+  let currentFailureStreak = 0;
+  for (let i = allDates.length - 1; i >= 0; i--) {
+    const dateStr = format(allDates[i], "yyyy-MM-dd");
+    const isFailure = !statusMap.get(dateStr);
+    if (isFailure) {
+      currentFailureStreak++;
+    } else {
+      break;
+    }
+  }
 
   return {
     currentFailureStreak,
-    longestFailureStreak: longestStreak,
+    longestFailureStreak,
   };
 }
