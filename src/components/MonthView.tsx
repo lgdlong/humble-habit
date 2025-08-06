@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useHabitStore } from "@/store/useHabitStore";
-import { cn } from "@/lib/utils";
+import { cn, calculateFailureStreaks } from "@/lib/utils";
 
 interface MonthViewProps {
   date?: Date;
@@ -179,15 +179,28 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
                     isSameMonth(new Date(record.date), currentMonth)
                 ).length;
 
+              // Calculate failure streaks for this habit
+              const allHabitRecords = Object.values(habitRecords).flat();
+              const { longestFailureStreak } = calculateFailureStreaks(
+                allHabitRecords,
+                habit.id
+              );
+
               return (
-                <div key={habit.id} className="flex items-center gap-1">
-                  <div
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: getHabitColor(habit.id) }}
-                  />
-                  <span>
-                    {habit.name}: {monthlyCompletions} days
-                  </span>
+                <div key={habit.id} className="flex flex-col items-center gap-1 text-center">
+                  <div className="flex items-center gap-1">
+                    <div
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: getHabitColor(habit.id) }}
+                    />
+                    <span className="font-medium">{habit.name}</span>
+                  </div>
+                  <div className="text-xs space-y-0.5">
+                    <div>{monthlyCompletions} days completed</div>
+                    <div className="text-red-500">
+                      Longest failure streak: {longestFailureStreak} days
+                    </div>
+                  </div>
                 </div>
               );
             })}
