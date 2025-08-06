@@ -10,7 +10,7 @@ export function cn(...inputs: ClassValue[]) {
 export function calculateFailureStreaks(
   habitRecords: HabitRecord[],
   habitId: string,
-  habitStartDate: string
+  habitStartDate: string,
 ): {
   currentFailureStreak: number;
   longestFailureStreak: number;
