@@ -172,7 +172,7 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
         {/* Stats */}
         <div className="mt-6 text-center space-y-3">
           <h3 className="text-xl font-medium">Your Progress</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-muted-foreground">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-muted-foreground place-items-center">
             {habits.map((habit) => {
               const habitRecordList = allRecords.filter(
                 (record) => record.habit_id === habit.id
@@ -191,7 +191,7 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
               return (
                 <div
                   key={habit.id}
-                  className="border rounded-xl p-2.5 shadow-sm space-y-1.5"
+                  className="border rounded-xl p-2.5 shadow-sm space-y-1.5 w-4/5 sm:w-full text-left"
                 >
                   <div className="flex flex-col items-start gap-1.5 font-normal">
                     <div className="flex flex-row items-center gap-2 w-full">
