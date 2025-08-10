@@ -170,9 +170,9 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
         </div>
 
         {/* Stats */}
-        <div className="mt-6 text-center space-y-2">
+        <div className="mt-6 text-center space-y-3">
           <h3 className="text-xl font-medium">Your Progress</h3>
-          <div className="flex justify-center gap-4 text-xs text-muted-foreground">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-muted-foreground">
             {habits.map((habit) => {
               const habitRecordList = allRecords.filter(
                 (record) => record.habit_id === habit.id
@@ -191,30 +191,34 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
               return (
                 <div
                   key={habit.id}
-                  className="border rounded-xl p-3 shadow-sm space-y-1"
+                  className="border rounded-xl p-2.5 shadow-sm space-y-1.5"
                 >
-                  <div className="flex flex-col items-start gap-2 font-normal">
-                    <div className="flex flex-row items-center gap-2">
+                  <div className="flex flex-col items-start gap-1.5 font-normal">
+                    <div className="flex flex-row items-center gap-2 w-full">
                       <div
-                        className="w-2 h-2 rounded-full"
+                        className="w-2 h-2 rounded-full flex-shrink-0"
                         style={{ backgroundColor: getHabitColor(habit.id) }}
                       />
-                      <strong>{habit.name}</strong>
+                      <strong className="text-xs leading-tight truncate">
+                        {habit.name}
+                      </strong>
                     </div>
-                    <span>
-                      Completed:{" "}
-                      <strong className="text-green-600">
-                        {totalCompletions}
-                      </strong>{" "}
-                      days
-                    </span>
-                    <span>
-                      Longest failure streak:{" "}
-                      <strong className="text-red-400">
-                        {longestFailureStreak}
-                      </strong>{" "}
-                      days
-                    </span>
+                    <div className="text-xs space-y-0.5 w-full">
+                      <div>
+                        Completed:{" "}
+                        <strong className="text-green-600">
+                          {totalCompletions}
+                        </strong>{" "}
+                        days
+                      </div>
+                      <div>
+                        Longest failure streak:{" "}
+                        <strong className="text-red-400">
+                          {longestFailureStreak}
+                        </strong>{" "}
+                        days
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
