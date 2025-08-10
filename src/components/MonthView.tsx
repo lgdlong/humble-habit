@@ -199,7 +199,11 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
                         className="w-2 h-2 rounded-full flex-shrink-0"
                         style={{ backgroundColor: getHabitColor(habit.id) }}
                       />
-                      <strong className="text-xs leading-tight truncate">
+                      <strong
+                        className="text-xs leading-tight truncate flex-1 min-w-0"
+                        title={habit.name}
+                        aria-label={habit.name}
+                      >
                         {habit.name}
                       </strong>
                     </div>
