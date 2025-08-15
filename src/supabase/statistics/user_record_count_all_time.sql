@@ -1,0 +1,2 @@
+-- THỐNG KÊ SỐ LƯỢNG RECORDS CỦA TỪNG USER SELECT 
+u.id AS user_id, u.email, COUNT(hr.id) AS record_count FROM auth.users AS u LEFT JOIN public.habit_records AS hr ON hr.user_id = u.id GROUP BY u.id, u.email ORDER BY record_count DESC;
