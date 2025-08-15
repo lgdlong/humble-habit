@@ -1,0 +1,2 @@
+-- THỐNG KÊ NHỮNG USER CÓ RECORD TRONG 10 NGÀY GẦN NHẤT 
+SELECT DISTINCT u.id AS user_id, u.email FROM auth.users u JOIN public.habit_records hr ON u.id = hr.user_id WHERE hr.created_at >= NOW() - INTERVAL '10 days';
