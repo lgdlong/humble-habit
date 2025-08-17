@@ -32,7 +32,7 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
   const { user } = useAuth();
   const { loadMonthRecords, loadHabits, habitRecords, habits } =
     useHabitStore();
-  const { weeklyHabit, fetchWeeklyHabit } = useWeeklyHabitStore();
+  const { weeklyHabit, weeklyHabitRecords, fetchWeeklyHabit, loadWeeklyHabitRecords } = useWeeklyHabitStore();
   const allRecords = useMemo(
     () => Object.values(habitRecords).flat(),
     [habitRecords]
@@ -46,8 +46,17 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
       const year = currentMonth.getFullYear();
       const month = currentMonth.getMonth() + 1;
       loadMonthRecords(year, month, user.id);
+      
+      // Load weekly habit records for the entire month
+      const monthStart = startOfMonth(currentMonth);
+      const monthEnd = endOfMonth(currentMonth);
+      let day = monthStart;
+      while (day <= monthEnd) {
+        loadWeeklyHabitRecords(day);
+        day = addDays(day, 1);
+      }
     }
-  }, [currentMonth, user, loadMonthRecords, loadHabits, fetchWeeklyHabit]);
+  }, [currentMonth, user, loadMonthRecords, loadHabits, fetchWeeklyHabit, loadWeeklyHabitRecords]);
 
   const getHabitColor = (habitId: string) => {
     const colors = [
@@ -73,6 +82,14 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
     if (!weeklyHabit) return false;
     const weekdayId = getWeekdayId(date);
     return weeklyHabit.days.includes(weekdayId);
+  };
+
+  // Helper function to check if weekly habit is completed on a date
+  const isWeeklyHabitCompleted = (date: Date): boolean => {
+    const dateString = format(date, "yyyy-MM-dd");
+    const dayRecords = weeklyHabitRecords[dateString] || [];
+    const record = dayRecords.find((r) => r.weekly_habit_id === weeklyHabit?.id);
+    return record?.status || false;
   };
 
   const monthStart = startOfMonth(currentMonth);
@@ -171,7 +188,10 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
                       <div
                         key="weekly-habit"
                         className="w-1.5 h-1.5 rounded-full"
-                        style={{ backgroundColor: "#10B981" }} // green for weekly habit
+                        style={{ 
+                          backgroundColor: isWeeklyHabitCompleted(dayDate) ? "#10B981" : "#D1FAE5",
+                          border: isWeeklyHabitCompleted(dayDate) ? "none" : "1px solid #10B981"
+                        }}
                       />
                     )}
                   </div>

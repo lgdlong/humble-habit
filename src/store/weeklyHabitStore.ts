@@ -1,10 +1,12 @@
 "use client";
 
 import { create } from "zustand";
-import type { WeeklyHabitDTO, WeekdayId, CreateWeeklyHabitRequest, UpdateWeeklyHabitRequest } from "@/types/weeklyHabit";
+import type { WeeklyHabitDTO, WeekdayId, CreateWeeklyHabitRequest, UpdateWeeklyHabitRequest, WeeklyHabitRecord } from "@/types/weeklyHabit";
+import { format } from "date-fns";
 
 interface WeeklyHabitState {
   weeklyHabit: WeeklyHabitDTO | null;
+  weeklyHabitRecords: Record<string, WeeklyHabitRecord[]>; // date -> weekly habit records for that date
   loading: boolean;
   error?: string;
   
@@ -13,12 +15,16 @@ interface WeeklyHabitState {
   createWeeklyHabit: (input: CreateWeeklyHabitRequest) => Promise<void>;
   updateWeeklyHabit: (input: UpdateWeeklyHabitRequest) => Promise<void>;
   deleteWeeklyHabit: (id: string) => Promise<void>;
+  loadWeeklyHabitRecords: (date: Date) => Promise<void>;
+  updateWeeklyHabitRecord: (userId: string, weeklyHabitId: string, date: Date, status: boolean) => Promise<void>;
   isScheduledToday: (todayId: WeekdayId) => boolean;
   isScheduledOnDate: (date: Date) => boolean;
+  getWeeklyHabitStatus: (date: Date) => boolean;
 }
 
 export const useWeeklyHabitStore = create<WeeklyHabitState>((set, get) => ({
   weeklyHabit: null,
+  weeklyHabitRecords: {},
   loading: false,
   error: undefined,
 
@@ -120,11 +126,104 @@ export const useWeeklyHabitStore = create<WeeklyHabitState>((set, get) => ({
         throw new Error(errorData.error || `Failed to delete weekly habit: ${response.statusText}`);
       }
 
-      set({ weeklyHabit: null, loading: false });
+      // Clear weekly habit and its records from state
+      set({ 
+        weeklyHabit: null, 
+        weeklyHabitRecords: {},
+        loading: false 
+      });
     } catch (error) {
       console.error("Error deleting weekly habit:", error);
       set({ 
         error: error instanceof Error ? error.message : "Failed to delete weekly habit", 
+        loading: false 
+      });
+      throw error;
+    }
+  },
+
+  loadWeeklyHabitRecords: async (date: Date) => {
+    set({ loading: true, error: undefined });
+
+    try {
+      const dateString = format(date, "yyyy-MM-dd");
+      
+      const response = await fetch(`/api/weekly-habit-records?date=${dateString}`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to load weekly habit records: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      set((state) => ({
+        weeklyHabitRecords: {
+          ...state.weeklyHabitRecords,
+          [dateString]: data || [],
+        },
+        loading: false,
+      }));
+    } catch (error) {
+      console.error("Error loading weekly habit records:", error);
+      set({ 
+        error: error instanceof Error ? error.message : "Failed to load weekly habit records", 
+        loading: false 
+      });
+    }
+  },
+
+  updateWeeklyHabitRecord: async (userId: string, weeklyHabitId: string, date: Date, status: boolean) => {
+    set({ loading: true, error: undefined });
+
+    try {
+      const dateString = format(date, "yyyy-MM-dd");
+
+      const response = await fetch("/api/weekly-habit-records", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          weekly_habit_id: weeklyHabitId,
+          date: dateString,
+          status,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to update weekly habit record: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      // Update the records in state
+      set((state) => {
+        const existingRecords = state.weeklyHabitRecords[dateString] || [];
+        const updatedRecords = existingRecords.some(
+          (record) => record.weekly_habit_id === weeklyHabitId,
+        )
+          ? existingRecords.map((record) =>
+              record.weekly_habit_id === weeklyHabitId ? data : record,
+            )
+          : [...existingRecords, data];
+
+        return {
+          weeklyHabitRecords: {
+            ...state.weeklyHabitRecords,
+            [dateString]: updatedRecords,
+          },
+          loading: false,
+        };
+      });
+    } catch (error) {
+      console.error("Error updating weekly habit record:", error);
+      set({ 
+        error: error instanceof Error ? error.message : "Failed to update weekly habit record", 
         loading: false 
       });
       throw error;
@@ -145,5 +244,13 @@ export const useWeeklyHabitStore = create<WeeklyHabitState>((set, get) => ({
     const weekdayId: WeekdayId = ((jsGetDay + 6) % 7) + 1 as WeekdayId;
     
     return weeklyHabit.days?.includes(weekdayId) || false;
+  },
+
+  getWeeklyHabitStatus: (date: Date) => {
+    const { weeklyHabitRecords } = get();
+    const dateString = format(date, "yyyy-MM-dd");
+    const dayRecords = weeklyHabitRecords[dateString] || [];
+    const record = dayRecords.find((r) => r.weekly_habit_id);
+    return record?.status || false;
   },
 }));

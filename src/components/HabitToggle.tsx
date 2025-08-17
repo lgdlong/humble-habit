@@ -38,6 +38,9 @@ export function HabitToggle({ date, onSave }: HabitToggleProps) {
   const {
     weeklyHabit,
     fetchWeeklyHabit,
+    loadWeeklyHabitRecords,
+    updateWeeklyHabitRecord,
+    getWeeklyHabitStatus,
     loading: weeklyLoading,
   } = useWeeklyHabitStore();
   const [open, setOpen] = useState(false);
@@ -60,8 +63,9 @@ export function HabitToggle({ date, onSave }: HabitToggleProps) {
       loadHabits(user.id);
       loadHabitRecords(date, user.id);
       fetchWeeklyHabit();
+      loadWeeklyHabitRecords(date);
     }
-  }, [user, date, loadHabits, loadHabitRecords, fetchWeeklyHabit]);
+  }, [user, date, loadHabits, loadHabitRecords, fetchWeeklyHabit, loadWeeklyHabitRecords]);
 
   const handleHabitToggle = async (habitId: string, currentStatus: boolean) => {
     if (!user) return;
@@ -74,6 +78,17 @@ export function HabitToggle({ date, onSave }: HabitToggleProps) {
     }
   };
 
+  const handleWeeklyHabitToggle = async (weeklyHabitId: string, currentStatus: boolean) => {
+    if (!user) return;
+    try {
+      await updateWeeklyHabitRecord(user.id, weeklyHabitId, date, currentStatus);
+      onSave?.();
+    } catch (error) {
+      console.error("Failed to update weekly habit record:", error);
+      // Optionally show user notification
+    }
+  };
+
   const getHabitStatus = (habitId: string) => {
     const record = dayRecords.find((r) => r.habit_id === habitId);
     return record?.status || false;
@@ -81,11 +96,6 @@ export function HabitToggle({ date, onSave }: HabitToggleProps) {
 
   const getCompletedHabits = () => {
     const completed = dayRecords.filter((record) => record.status);
-    
-    // Add weekly habit indicator if it's scheduled today and would be completed
-    // Note: We'll need to implement weekly habit records tracking later
-    // For now, just show the dot if weekly habit is scheduled
-    
     return completed;
   };
 
@@ -129,8 +139,8 @@ export function HabitToggle({ date, onSave }: HabitToggleProps) {
                 />
               );
             })}
-            {/* Weekly habit indicator - show green dot if scheduled today */}
-            {isWeeklyHabitScheduledToday && (
+            {/* Weekly habit indicator - show green dot if scheduled today and completed */}
+            {isWeeklyHabitScheduledToday && getWeeklyHabitStatus(date) && (
               <div
                 className="w-3 h-3 rounded-full"
                 style={{
@@ -199,11 +209,10 @@ export function HabitToggle({ date, onSave }: HabitToggleProps) {
                 <div className="flex items-center space-x-3 border-t border-green-200 pt-4">
                   <Checkbox
                     id={`weekly-${weeklyHabit.id}`}
-                    checked={false} // TODO: Implement weekly habit records tracking
-                    onCheckedChange={(checked) => {
-                      // TODO: Implement weekly habit record update
-                      console.log("Weekly habit toggle:", checked);
-                    }}
+                    checked={getWeeklyHabitStatus(date)}
+                    onCheckedChange={(checked) =>
+                      handleWeeklyHabitToggle(weeklyHabit.id, checked === true)
+                    }
                     className="border-green-500 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
                   />
                   <label
