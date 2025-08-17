@@ -17,7 +17,9 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useHabitStore } from "@/store/useHabitStore";
+import { useWeeklyHabitStore } from "@/store/weeklyHabitStore";
 import { calculateFailureStreaks, cn } from "@/lib/utils";
+import type { WeekdayId } from "@/types/weeklyHabit";
 
 interface MonthViewProps {
   date?: Date;
@@ -30,20 +32,35 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
   const { user } = useAuth();
   const { loadMonthRecords, loadHabits, habitRecords, habits } =
     useHabitStore();
+  const { weeklyHabit, fetchWeeklyHabit } = useWeeklyHabitStore();
   const allRecords = useMemo(
     () => Object.values(habitRecords).flat(),
     [habitRecords]
   );
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
+  // Helper function to convert JS Date to weekday ID (1=Mon, 7=Sun)
+  const getWeekdayId = (date: Date): WeekdayId => {
+    const jsDay = date.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+    return (((jsDay + 6) % 7) + 1) as WeekdayId; // Convert to 1=Mon, 7=Sun
+  };
+
+  // Check if a date is scheduled for weekly habit
+  const isWeeklyHabitScheduledOnDate = (date: Date): boolean => {
+    if (!weeklyHabit) return false;
+    const weekdayId = getWeekdayId(date);
+    return weeklyHabit.days.includes(weekdayId);
+  };
+
   useEffect(() => {
     if (user) {
       loadHabits(user.id);
+      fetchWeeklyHabit();
       const year = currentMonth.getFullYear();
       const month = currentMonth.getMonth() + 1;
       loadMonthRecords(year, month, user.id);
     }
-  }, [currentMonth, user, loadMonthRecords, loadHabits]);
+  }, [currentMonth, user, loadMonthRecords, loadHabits, fetchWeeklyHabit]);
 
   const getHabitColor = (habitId: string) => {
     const colors = [
@@ -137,8 +154,9 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
                   <span>{format(dayDate, "d")}</span>
 
                   {/* Habit dots */}
-                  {completedRecords.length > 0 && (
+                  {(completedRecords.length > 0 || isWeeklyHabitScheduledOnDate(dayDate)) && (
                     <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex gap-0.5">
+                      {/* Daily habit dots */}
                       {completedRecords.map((record) => {
                         const color = getHabitColor(record.habit_id);
                         return (
@@ -149,6 +167,15 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
                           />
                         );
                       })}
+                      
+                      {/* Weekly habit dot */}
+                      {isWeeklyHabitScheduledOnDate(dayDate) && (
+                        <div
+                          key="weekly-habit"
+                          className="w-1.5 h-1.5 rounded-full"
+                          style={{ backgroundColor: "#10B981" }} // Green color for weekly habit
+                        />
+                      )}
                     </div>
                   )}
                 </div>
