@@ -17,7 +17,9 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useHabitStore } from "@/store/useHabitStore";
+import { useWeeklyHabitStore } from "@/store/weeklyHabitStore";
 import { calculateFailureStreaks, cn } from "@/lib/utils";
+import type { WeekdayId } from "@/types/weeklyHabit";
 
 interface MonthViewProps {
   date?: Date;
@@ -30,6 +32,7 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
   const { user } = useAuth();
   const { loadMonthRecords, loadHabits, habitRecords, habits } =
     useHabitStore();
+  const { weeklyHabit, weeklyHabitRecords, fetchWeeklyHabit, loadWeeklyHabitRecords } = useWeeklyHabitStore();
   const allRecords = useMemo(
     () => Object.values(habitRecords).flat(),
     [habitRecords]
@@ -39,23 +42,54 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
   useEffect(() => {
     if (user) {
       loadHabits(user.id);
+      fetchWeeklyHabit();
       const year = currentMonth.getFullYear();
       const month = currentMonth.getMonth() + 1;
       loadMonthRecords(year, month, user.id);
+      
+      // Load weekly habit records for the entire month
+      const monthStart = startOfMonth(currentMonth);
+      const monthEnd = endOfMonth(currentMonth);
+      let day = monthStart;
+      while (day <= monthEnd) {
+        loadWeeklyHabitRecords(day);
+        day = addDays(day, 1);
+      }
     }
-  }, [currentMonth, user, loadMonthRecords, loadHabits]);
+  }, [currentMonth, user, loadMonthRecords, loadHabits, fetchWeeklyHabit, loadWeeklyHabitRecords]);
 
   const getHabitColor = (habitId: string) => {
     const colors = [
-      "#EF4444",
-      "#3B82F6",
-      "#10B981",
-      "#F59E0B",
-      "#8B5CF6",
-      "#EC4899",
+      "#EF4444", // red
+      "#3B82F6", // blue
+      "#10B981", // green (reserved for weekly habits)
+      "#F59E0B", // amber
+      "#8B5CF6", // violet
+      "#EC4899", // pink
     ];
     const index = habits.findIndex((h) => h.id === habitId);
     return colors[index % colors.length] || "#6B7280";
+  };
+
+  // Helper function to get weekday ID from date
+  const getWeekdayId = (date: Date): WeekdayId => {
+    const jsGetDay = date.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+    return ((jsGetDay + 6) % 7) + 1 as WeekdayId; // Convert to 1=Mon, ..., 7=Sun
+  };
+
+  // Helper function to check if weekly habit is scheduled on a date
+  const isWeeklyHabitScheduled = (date: Date): boolean => {
+    if (!weeklyHabit) return false;
+    const weekdayId = getWeekdayId(date);
+    return weeklyHabit.days.includes(weekdayId);
+  };
+
+  // Helper function to check if weekly habit is completed on a date
+  const isWeeklyHabitCompleted = (date: Date): boolean => {
+    const dateString = format(date, "yyyy-MM-dd");
+    const dayRecords = weeklyHabitRecords[dateString] || [];
+    const record = dayRecords.find((r) => r.weekly_habit_id === weeklyHabit?.id);
+    return record?.status || false;
   };
 
   const monthStart = startOfMonth(currentMonth);
@@ -137,20 +171,30 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
                   <span>{format(dayDate, "d")}</span>
 
                   {/* Habit dots */}
-                  {completedRecords.length > 0 && (
-                    <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex gap-0.5">
-                      {completedRecords.map((record) => {
-                        const color = getHabitColor(record.habit_id);
-                        return (
-                          <div
-                            key={record.habit_id}
-                            className="w-1.5 h-1.5 rounded-full"
-                            style={{ backgroundColor: color }}
-                          />
-                        );
-                      })}
-                    </div>
-                  )}
+                  <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex gap-0.5">
+                    {/* Daily habit dots */}
+                    {completedRecords.map((record) => {
+                      const color = getHabitColor(record.habit_id);
+                      return (
+                        <div
+                          key={record.habit_id}
+                          className="w-1.5 h-1.5 rounded-full"
+                          style={{ backgroundColor: color }}
+                        />
+                      );
+                    })}
+                    {/* Weekly habit dot - show green dot if scheduled today */}
+                    {isWeeklyHabitScheduled(dayDate) && (
+                      <div
+                        key="weekly-habit"
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ 
+                          backgroundColor: isWeeklyHabitCompleted(dayDate) ? "#10B981" : "#D1FAE5",
+                          border: isWeeklyHabitCompleted(dayDate) ? "none" : "1px solid #10B981"
+                        }}
+                      />
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -173,6 +217,7 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
         <div className="mt-6 text-center space-y-3">
           <h3 className="text-xl font-medium">Your Progress</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-muted-foreground place-items-center">
+            {/* Daily habits stats */}
             {habits.map((habit) => {
               const habitRecordList = allRecords.filter(
                 (record) => record.habit_id === habit.id
@@ -227,6 +272,37 @@ export function MonthView({ onSwitchToDay }: MonthViewProps) {
                 </div>
               );
             })}
+
+            {/* Weekly habit stats */}
+            {weeklyHabit && (
+              <div className="border border-green-200 rounded-xl p-2.5 shadow-sm space-y-1.5 w-4/5 sm:w-full text-left bg-green-50/50 dark:bg-green-900/10">
+                <div className="flex flex-col items-start gap-1.5 font-normal">
+                  <div className="flex flex-row items-center gap-2 w-full">
+                    <div
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: "#10B981" }}
+                    />
+                    <strong
+                      className="text-xs leading-tight truncate flex-1 min-w-0 text-green-700 dark:text-green-400"
+                      title={weeklyHabit.title}
+                      aria-label={weeklyHabit.title}
+                    >
+                      {weeklyHabit.title}
+                    </strong>
+                  </div>
+                  <div className="text-xs space-y-0.5 w-full text-green-600 dark:text-green-400">
+                    <div>
+                      Scheduled:{" "}
+                      <strong>{weeklyHabit.days.length}</strong>{" "}
+                      days/week
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Weekly habit
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
